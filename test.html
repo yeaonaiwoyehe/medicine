@@ -181,35 +181,56 @@
           body: fd
         })
         const data = await res.json()
-
+        console.log('API Response:', data) // 调试日志
         showResult(data)
       } catch (err) {
-        alert('请求失败，请确保后端已启动')
+        console.error('Fetch Error:', err)
+        alert('请求失败：' + err.message)
       } finally {
         loading.style.display = 'none'
+        submitBtn.style.display = 'inline-block'
       }
     }
 
     function showResult(data) {
       resultBox.style.display = 'block'
 
-      for (let i = 1; i <= 3; i++) {
-        const key = `top${i}`
-        const dom = document.getElementById(key)
-        const info = data[key]
-        if (!info) {
-          dom.innerHTML = ''
-          continue
-        }
+      // 清空旧结果
+      document.getElementById('top1').innerHTML = ''
+      document.getElementById('top2').innerHTML = ''
+      document.getElementById('top3').innerHTML = ''
 
-        dom.innerHTML = `
-          <p><span class="label">名称：</span>${info.name}</p>
-          <p><span class="label">年代：</span>${info.dynasty}</p>
-          <p><span class="label">用途：</span>${info.usage}</p>
-          <p><span class="label">药材：</span>${info.herbs}</p>
-          <p><span class="label">历史：</span>${info.story}</p>
-          <p><span class="label">现代：</span>${info.modern}</p>
-          <p><span class="label">相似度：</span>${info.similarity.toFixed(2)}</p>
+      if (!data.success) {
+        document.getElementById('top1').innerHTML = `<p style="color:red">识别失败：${data.error || data.message || '未知错误'}</p>`
+        return
+      }
+
+      // 数据库匹配成功 (top1, top2, top3)
+      if (data.source === 'database') {
+        for (let i = 1; i <= 3; i++) {
+          const key = `top${i}`
+          const dom = document.getElementById(key)
+          const info = data[key]
+          if (!info) continue
+
+          dom.innerHTML = `
+            <p><span class="label">名称：</span>${info.name || '未知'}</p>
+            <p><span class="label">年代：</span>${info.dynasty || '未知'}</p>
+            <p><span class="label">用途：</span>${info.usage || '未知'}</p>
+            <p><span class="label">药材：</span>${info.herbs || '未知'}</p>
+            <p><span class="label">历史：</span>${info.story || '未知'}</p>
+            <p><span class="label">现代：</span>${info.modern || '未知'}</p>
+            <p><span class="label">相似度：</span>${(info.similarity * 100).toFixed(2)}%</p>
+          `
+        }
+      }
+      // AI 识别结果 (数据结构不同)
+      else if (data.source === 'ai') {
+        document.getElementById('top1').innerHTML = `
+          <p style="color:#3498db">数据库未匹配，已转由 AI 识别：</p>
+          <p><span class="label">名称：</span>${data.name || '未知'}</p>
+          <p><span class="label">描述：</span>${data.description || '无'}</p>
+          <p><span class="label">置信度：</span>${(data.similarity * 100).toFixed(2)}%</p>
         `
       }
     }
