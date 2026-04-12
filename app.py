@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify,send_file
 from flask_cors import CORS
 import os
 import json
@@ -29,7 +29,7 @@ with open(os.path.join(BASE_DIR, "knowledge.json"), "r", encoding="utf-8") as f:
 
 @app.route('/')
 def home():
-    return "🚀 后端运行中（部署版）"
+    return send_file('test.html')
 
 
 @app.route('/upload', methods=['POST'])
