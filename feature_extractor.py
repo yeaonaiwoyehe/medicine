@@ -2,8 +2,8 @@ import torch
 from torchvision import models, transforms
 from PIL import Image
 
-# 加载ResNet50（去掉分类层）
-model = models.resnet50(pretrained=True)
+# 加载ResNet18（去掉分类层）
+model = models.resnet18(pretrained=True)
 model = torch.nn.Sequential(*list(model.children())[:-1])
 model.eval()
 
