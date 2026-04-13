@@ -558,6 +558,17 @@ function pickFirstText(core, keys) {
     return '';
 }
 
+function pickFirstAny(obj, keys) {
+    if (!obj || typeof obj !== 'object') return '';
+    for (const key of keys) {
+        const value = obj[key];
+        if (value !== undefined && value !== null && String(value).trim()) {
+            return String(value).trim();
+        }
+    }
+    return '';
+}
+
 function buildResultFromBackend(apiData) {
     if (!apiData || apiData.success === false) {
         throw new Error((apiData && (apiData.error || apiData.message)) || '后端返回异常');
@@ -566,41 +577,61 @@ function buildResultFromBackend(apiData) {
     const isDbMatched = apiData.source === 'database' && apiData.top1;
     const core = isDbMatched ? apiData.top1 : apiData;
 
-    const artifactType = core.type || '未知类型';
+    const imageId = pickFirstText(core, ['image_id', 'image', 'filename']) || '未知图片';
+    const artifactName = pickFirstText(core, ['name', 'title', '名称']) || imageId;
+    const artifactType = pickFirstText(core, ['type', 'usage_type', '类别', '类型']) || '未知类型';
+    const artifactDynasty = pickFirstText(core, ['dynasty', 'era', '年代', '朝代']) || '未知';
+    const artifactMaterial = pickFirstText(core, ['material', '材质']) || '未知';
+    const artifactDescription = pickFirstText(core, ['description', 'desc', 'story', '内容简介', '详细介绍']) || '暂无详细描述';
+
     const herbNames = normalizeHerbs(
-        pickFirstText(core, ['herbs', 'chineseMedicinalMaterials', 'acupoint'])
+        pickFirstAny(core, [
+            'herbs',
+            'chineseMedicinalMaterials',
+            'acupoint',
+            '药材',
+            '中药材',
+            '穴位'
+        ])
     );
     const herbIcons = ['fa-leaf', 'fa-seedling', 'fa-spa', 'fa-circle', 'fa-tree', 'fa-seedling'];
 
     const herbs = herbNames.length > 0
         ? herbNames.slice(0, 6).map((name, idx) => ({
             name,
-            property: pickFirstText(core, ['material', 'function', 'value']) || '知识库字段',
+            property: pickFirstText(core, ['material', 'function', 'value', 'benefit']) || '知识库字段',
             icon: herbIcons[idx % herbIcons.length],
-            efficacy: pickFirstText(core, ['usage', 'benefit']) || '见文物信息'
+            efficacy: pickFirstText(core, ['usage', 'benefit', 'content_introduction']) || '见文物信息'
         }))
-        : [];
+        : (artifactType && artifactType !== '未知类型'
+            ? [{
+                name: artifactType,
+                property: artifactMaterial,
+                icon: herbIcons[0],
+                efficacy: pickFirstText(core, ['usage', 'content_introduction']) || '见文物信息'
+            }]
+            : []);
 
-    const descriptionParts = [core.description, core.story, core.modern]
+    const descriptionParts = [artifactDescription, core.story, core.modern]
         .filter(Boolean)
         .map(item => String(item).trim());
 
-    const knowledgeSource = pickFirstText(core, ['author', 'celebrity']) || '知识库';
-    const knowledgeSummary = pickFirstText(core, ['content_introduction', 'usage', 'benefit', 'value', 'function']);
+    const knowledgeSource = pickFirstText(core, ['author', 'celebrity', '来源']) || '知识库';
+    const knowledgeSummary = pickFirstText(core, ['content_introduction', 'usage', 'benefit', 'value', 'function', 'description']);
     const knowledgeCulture = pickFirstText(core, ['cultural_value', 'culturalValue', 'culturalSignificance']);
 
     const prescriptions = [{
-        name: core.name || core.image_id || '知识条目',
+        name: artifactName,
         source: knowledgeSource,
-        herbs: herbNames.length > 0 ? herbNames.slice(0, 5) : [artifactType],
+        herbs: herbNames.length > 0 ? herbNames.slice(0, 5) : [artifactType || '未知类型'],
         efficacy: knowledgeSummary || '暂无补充说明'
     }];
 
     const timeline = [
         {
-            date: core.dynasty || '未知时期',
-            title: core.name || '知识条目',
-            desc: core.description || '暂无描述'
+            date: artifactDynasty || '未知时期',
+            title: artifactName || '知识条目',
+            desc: artifactDescription || '暂无描述'
         }
     ];
 
@@ -614,10 +645,10 @@ function buildResultFromBackend(apiData) {
 
     return {
         artifact: {
-            name: core.name || core.image_id || '未知文物',
-            dynasty: core.dynasty || '未知',
+            name: artifactName,
+            dynasty: artifactDynasty,
             type: artifactType,
-            material: core.material || '未知',
+            material: artifactMaterial,
             confidence: Number((((core.similarity ?? apiData.similarity) || 0) * 100).toFixed(2)),
             description: descriptionParts.length > 0 ? descriptionParts.join('；') : '暂无详细描述'
         },
