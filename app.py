@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify,send_file
+from flask import Flask, request, jsonify
 from flask_cors import CORS
 import os
 import json
@@ -11,11 +11,12 @@ USE_AI = False
 if USE_AI:
     from ai_fallback import call_ai_api
 
-app = Flask(__name__)
-CORS(app)
-
-# ✅ 确保路径正确（云环境关键）
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+PUBLIC_DIR = os.path.join(BASE_DIR, "program(4)", "public")
+
+# 将前端 public 目录作为 Flask 静态根目录，确保 css/js/image 可直接访问
+app = Flask(__name__, static_folder=PUBLIC_DIR, static_url_path="")
+CORS(app)
 
 UPLOAD_FOLDER = os.path.join(BASE_DIR, "temp")
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -29,7 +30,7 @@ with open(os.path.join(BASE_DIR, "knowledge.json"), "r", encoding="utf-8") as f:
 
 @app.route('/')
 def home():
-    return send_file(os.path.join(BASE_DIR, "program(4)", "public", "index.html"))
+    return app.send_static_file("index.html")
 
 
 @app.route('/upload', methods=['POST'])
