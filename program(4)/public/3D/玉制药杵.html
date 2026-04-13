@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>中药古文物3D展示</title>
+  <style>
+    body { 
+      margin: 0; 
+      overflow: hidden; 
+      font-family: 'Microsoft YaHei', sans-serif; 
+    }
+    #info { 
+      position: absolute; 
+      top: 20px; 
+      left: 20px; 
+      color: white; 
+      background: rgba(0,0,0,0.6); 
+      padding: 10px 20px; 
+      border-radius: 8px; 
+      pointer-events: none; 
+      z-index: 100; 
+      backdrop-filter: blur(5px); 
+      font-size: 14px; 
+    }
+    .controls-note { 
+      position: absolute; 
+      bottom: 20px; 
+      left: 20px; 
+      color: rgba(255,255,255,0.7); 
+      background: rgba(0,0,0,0.5); 
+      padding: 5px 12px; 
+      border-radius: 5px; 
+      font-size: 12px; 
+      pointer-events: none; 
+      z-index: 100; 
+    }
+  </style>
+</head>
+<body>
+  <div id="info">🀆 中药古文物展示</div>
+  <div class="controls-note">鼠标拖拽旋转视角 | 右键平移 | 滚动缩放</div>
+  <div id="loading" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:white;font-size:16px;">💡 提示：模型加载可能需要几秒钟，请耐心等待</div>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+    // --- 1. 初始化场景、相机、渲染器 ---
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x1a1a2e);
+
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(1.5, 1.5, 3)
+    camera.lookAt(0, 0, 0);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;  // 电影级色调映射，更有质感
+    renderer.toneMappingExposure = 1.2;  // 曝光调整
+    document.body.appendChild(renderer.domElement);
+
+    // --- 2. 添加控制器 ---
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.rotateSpeed = 1.0;
+    controls.zoomSpeed = 1.2;
+    controls.enableZoom = true;
+    controls.enablePan = true;
+    controls.target.set(0, 0, 0);
+
+    // --- 3. 摄影棚式布光：均匀柔和、有质感 ---
+    
+    // 环境光：基础照明
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    scene.add(ambientLight);
+
+    // 半球光：模拟天空和地面反射，让整体更自然
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.8);
+    hemiLight.position.set(0, 20, 0);
+    scene.add(hemiLight);
+
+    // 主光源：正前方稍偏上，柔和的主光
+    const keyLight = new THREE.DirectionalLight(0xffffff, 1.0);
+    keyLight.position.set(5, 8, 5);
+    scene.add(keyLight);
+
+    // 填充光：右侧补光，减少阴影
+    const fillLight = new THREE.DirectionalLight(0xffffff, 0.7);
+    fillLight.position.set(-5, 3, 5);
+    scene.add(fillLight);
+
+    // 背光：后方打光，勾勒轮廓
+    const backLight = new THREE.DirectionalLight(0xffffff, 0.5);
+    backLight.position.set(0, 5, -8);
+    scene.add(backLight);
+
+    // 左侧补光
+    const leftLight = new THREE.DirectionalLight(0xffffff, 0.5);
+    leftLight.position.set(-6, 4, 0);
+    scene.add(leftLight);
+
+    // 右侧补光
+    const rightLight = new THREE.DirectionalLight(0xffffff, 0.5);
+    rightLight.position.set(6, 4, 0);
+    scene.add(rightLight);
+
+    // 顶光：照亮顶部
+    const topLight = new THREE.DirectionalLight(0xffffff, 0.4);
+    topLight.position.set(0, 10, 0);
+    scene.add(topLight);
+
+    // 底部反射光：模拟地面反射
+    const bottomLight = new THREE.DirectionalLight(0xffffff, 0.3);
+    bottomLight.position.set(0, -5, 0);
+    scene.add(bottomLight);
+
+    // --- 4. 加载模型 ---
+    const loader = new GLTFLoader();
+    const modelPath = 'models/玉制药杵.glb';
+
+    loader.load(modelPath, (gltf) => {
+      const model = gltf.scene;
+      scene.add(model);
+      
+      document.getElementById('loading').style.display = 'none';
+      console.log('✅ 模型加载成功！', model);
+
+      // 自动对准模型
+      const box = new THREE.Box3().setFromObject(model);
+      const center = box.getCenter(new THREE.Vector3());
+      controls.target.copy(center);
+    }, 
+    (xhr) => {
+      if (xhr.total > 0) {
+        console.log(`📦 模型加载进度: ${(xhr.loaded / xhr.total * 100).toFixed(1)}%`);
+      }
+    }, 
+    (error) => {
+      console.error('❌ 模型加载失败:', error);
+      document.getElementById('loading').innerHTML = '❌ 模型加载失败，请检查路径是否正确';
+      document.getElementById('loading').style.color = 'red';
+    });
+
+    // --- 5. 星空粒子 ---
+    const starGeometry = new THREE.BufferGeometry();
+    const starCount = 1500;
+    const starPositions = new Float32Array(starCount * 3);
+    for (let i = 0; i < starCount; i++) {
+      starPositions[i*3] = (Math.random() - 0.5) * 2000;
+      starPositions[i*3+1] = (Math.random() - 0.5) * 1000;
+      starPositions[i*3+2] = (Math.random() - 0.5) * 500 - 200;
+    }
+    starGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+    const starMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 0.3 });
+    const stars = new THREE.Points(starGeometry, starMaterial);
+    scene.add(stars);
+
+    // --- 6. 动画循环 ---
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      stars.rotation.y += 0.0005;
+      stars.rotation.x += 0.0003;
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    // --- 7. 响应窗口变化 ---
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
+</body>
+</html>

@@ -29,7 +29,7 @@ with open(os.path.join(BASE_DIR, "knowledge.json"), "r", encoding="utf-8") as f:
 
 @app.route('/')
 def home():
-    return send_file('test.html')
+    return send_file(os.path.join(BASE_DIR, "program(4)", "public", "index.html"))
 
 
 @app.route('/upload', methods=['POST'])
