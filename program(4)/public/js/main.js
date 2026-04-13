@@ -548,6 +548,16 @@ function normalizeHerbs(rawHerbs) {
         .filter(Boolean);
 }
 
+function pickFirstText(core, keys) {
+    for (const key of keys) {
+        const value = core && core[key];
+        if (value !== undefined && value !== null && String(value).trim()) {
+            return String(value).trim();
+        }
+    }
+    return '';
+}
+
 function buildResultFromBackend(apiData) {
     if (!apiData || apiData.success === false) {
         throw new Error((apiData && (apiData.error || apiData.message)) || '后端返回异常');
@@ -556,23 +566,51 @@ function buildResultFromBackend(apiData) {
     const isDbMatched = apiData.source === 'database' && apiData.top1;
     const core = isDbMatched ? apiData.top1 : apiData;
 
-    const artifactType = core.type || core.usage || '制药器具';
-    const fallbackData = getDataByType(artifactType);
-    const herbNames = normalizeHerbs(core.herbs);
+    const artifactType = core.type || '未知类型';
+    const herbNames = normalizeHerbs(
+        pickFirstText(core, ['herbs', 'chineseMedicinalMaterials', 'acupoint'])
+    );
     const herbIcons = ['fa-leaf', 'fa-seedling', 'fa-spa', 'fa-circle', 'fa-tree', 'fa-seedling'];
 
     const herbs = herbNames.length > 0
         ? herbNames.slice(0, 6).map((name, idx) => ({
             name,
-            property: '待补充',
+            property: pickFirstText(core, ['material', 'function', 'value']) || '知识库字段',
             icon: herbIcons[idx % herbIcons.length],
-            efficacy: '待补充'
+            efficacy: pickFirstText(core, ['usage', 'benefit']) || '见文物信息'
         }))
-        : fallbackData.herbs.slice(0, 6);
+        : [];
 
     const descriptionParts = [core.description, core.story, core.modern]
         .filter(Boolean)
         .map(item => String(item).trim());
+
+    const knowledgeSource = pickFirstText(core, ['author', 'celebrity']) || '知识库';
+    const knowledgeSummary = pickFirstText(core, ['content_introduction', 'usage', 'benefit', 'value', 'function']);
+    const knowledgeCulture = pickFirstText(core, ['cultural_value', 'culturalValue', 'culturalSignificance']);
+
+    const prescriptions = [{
+        name: core.name || core.image_id || '知识条目',
+        source: knowledgeSource,
+        herbs: herbNames.length > 0 ? herbNames.slice(0, 5) : [artifactType],
+        efficacy: knowledgeSummary || '暂无补充说明'
+    }];
+
+    const timeline = [
+        {
+            date: core.dynasty || '未知时期',
+            title: core.name || '知识条目',
+            desc: core.description || '暂无描述'
+        }
+    ];
+
+    if (knowledgeCulture) {
+        timeline.push({
+            date: '文化价值',
+            title: '知识库补充',
+            desc: knowledgeCulture
+        });
+    }
 
     return {
         artifact: {
@@ -584,8 +622,8 @@ function buildResultFromBackend(apiData) {
             description: descriptionParts.length > 0 ? descriptionParts.join('；') : '暂无详细描述'
         },
         herbs,
-        prescriptions: fallbackData.prescriptions,
-        timeline: fallbackData.timeline
+        prescriptions,
+        timeline
     };
 }
 
