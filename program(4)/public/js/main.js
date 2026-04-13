@@ -8,6 +8,26 @@ let currentTheme = 'light';
 let uploadedFile = null;
 let currentUser = null;
 const UPLOAD_API_URL = window.UPLOAD_API_URL || 'http://39.107.123.87:5000/upload';
+const LOCAL_KNOWLEDGE_FALLBACK = {
+    'bianshi_001.jpg': {
+        name: '砭石和骨针',
+        dynasty: '新石器时期',
+        type: '针灸经络',
+        material: '砭石、兽骨',
+        description: '中国最早的原始医疗工具，用于针刺、放血、切开痈肿，是针灸针具的前身',
+        usage: '以砭石按压、刮擦、刺破体表穴位，缓解疼痛、排出脓血',
+        acupoint: '体表痛处、阿是穴'
+    },
+    'bianshi_002.jpg': {
+        name: '民国针灸针套装',
+        dynasty: '民国',
+        type: '针灸经络',
+        material: '金属、木质',
+        description: '民国时期中医行医常用针灸针具，含多规格针体，收纳于木筒，便于携带使用',
+        usage: '根据病症选取对应穴位，刺入皮下留针或行针，调理脏腑气血',
+        acupoint: '全身经络穴位，如合谷、足三里、三阴交'
+    }
+};
 
 // DOM Ready
 document.addEventListener('DOMContentLoaded', () => {
@@ -578,14 +598,16 @@ function buildResultFromBackend(apiData) {
     const core = isDbMatched ? apiData.top1 : apiData;
 
     const imageId = pickFirstText(core, ['image_id', 'image', 'filename']) || '未知图片';
-    const artifactName = pickFirstText(core, ['name', 'title', '名称']) || imageId;
-    const artifactType = pickFirstText(core, ['type', 'usage_type', '类别', '类型']) || '未知类型';
-    const artifactDynasty = pickFirstText(core, ['dynasty', 'era', '年代', '朝代']) || '未知';
-    const artifactMaterial = pickFirstText(core, ['material', '材质']) || '未知';
-    const artifactDescription = pickFirstText(core, ['description', 'desc', 'story', '内容简介', '详细介绍']) || '暂无详细描述';
+    const fallbackRecord = LOCAL_KNOWLEDGE_FALLBACK[imageId] || {};
+    const merged = { ...fallbackRecord, ...core };
+    const artifactName = pickFirstText(merged, ['name', 'title', '名称']) || imageId;
+    const artifactType = pickFirstText(merged, ['type', 'usage_type', '类别', '类型']) || '未知类型';
+    const artifactDynasty = pickFirstText(merged, ['dynasty', 'era', '年代', '朝代']) || '未知';
+    const artifactMaterial = pickFirstText(merged, ['material', '材质']) || '未知';
+    const artifactDescription = pickFirstText(merged, ['description', 'desc', 'story', '内容简介', '详细介绍']) || '暂无详细描述';
 
     const herbNames = normalizeHerbs(
-        pickFirstAny(core, [
+        pickFirstAny(merged, [
             'herbs',
             'chineseMedicinalMaterials',
             'acupoint',
@@ -599,26 +621,26 @@ function buildResultFromBackend(apiData) {
     const herbs = herbNames.length > 0
         ? herbNames.slice(0, 6).map((name, idx) => ({
             name,
-            property: pickFirstText(core, ['material', 'function', 'value', 'benefit']) || '知识库字段',
+            property: pickFirstText(merged, ['material', 'function', 'value', 'benefit']) || '知识库字段',
             icon: herbIcons[idx % herbIcons.length],
-            efficacy: pickFirstText(core, ['usage', 'benefit', 'content_introduction']) || '见文物信息'
+            efficacy: pickFirstText(merged, ['usage', 'benefit', 'content_introduction']) || '见文物信息'
         }))
         : (artifactType && artifactType !== '未知类型'
             ? [{
                 name: artifactType,
                 property: artifactMaterial,
                 icon: herbIcons[0],
-                efficacy: pickFirstText(core, ['usage', 'content_introduction']) || '见文物信息'
+                efficacy: pickFirstText(merged, ['usage', 'content_introduction']) || '见文物信息'
             }]
             : []);
 
-    const descriptionParts = [artifactDescription, core.story, core.modern]
+    const descriptionParts = [artifactDescription, merged.story, merged.modern]
         .filter(Boolean)
         .map(item => String(item).trim());
 
-    const knowledgeSource = pickFirstText(core, ['author', 'celebrity', '来源']) || '知识库';
-    const knowledgeSummary = pickFirstText(core, ['content_introduction', 'usage', 'benefit', 'value', 'function', 'description']);
-    const knowledgeCulture = pickFirstText(core, ['cultural_value', 'culturalValue', 'culturalSignificance']);
+    const knowledgeSource = pickFirstText(merged, ['author', 'celebrity', '来源']) || '知识库';
+    const knowledgeSummary = pickFirstText(merged, ['content_introduction', 'usage', 'benefit', 'value', 'function', 'description']);
+    const knowledgeCulture = pickFirstText(merged, ['cultural_value', 'culturalValue', 'culturalSignificance']);
 
     const prescriptions = [{
         name: artifactName,
