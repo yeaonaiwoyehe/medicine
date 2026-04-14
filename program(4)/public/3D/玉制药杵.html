@@ -129,7 +129,7 @@
 
     // --- 4. 加载模型 ---
     const loader = new GLTFLoader();
-    const modelPath = 'models/玉制药杵.glb';
+    const modelPath = new URL('./models/玉制药杵.glb', window.location.href).href;
 
     loader.load(modelPath, (gltf) => {
       const model = gltf.scene;
