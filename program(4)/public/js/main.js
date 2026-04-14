@@ -615,6 +615,26 @@ function pickFirstAny(obj, keys) {
     return '';
 }
 
+function normalizeHistoricalChanges(rawChanges) {
+    if (!Array.isArray(rawChanges)) return [];
+    return rawChanges
+        .map((item) => {
+            if (!item || typeof item !== 'object') return null;
+            const period = pickFirstText(item, ['period', 'date', 'year', '时期']);
+            const title = pickFirstText(item, ['title', 'name', '阶段']);
+            const change = pickFirstText(item, ['change', 'content', '描述']);
+            const impact = pickFirstText(item, ['impact', 'value', '意义']);
+            const desc = [change, impact].filter(Boolean).join(' ');
+            if (!period && !title && !desc) return null;
+            return {
+                date: period || '未知时期',
+                title: title || '历史节点',
+                desc: desc || '暂无描述'
+            };
+        })
+        .filter(Boolean);
+}
+
 function buildResultFromBackend(apiData) {
     if (!apiData || apiData.success === false) {
         throw new Error((apiData && (apiData.error || apiData.message)) || '后端返回异常');
@@ -631,6 +651,7 @@ function buildResultFromBackend(apiData) {
     const artifactDynasty = pickFirstText(merged, ['dynasty', 'era', '年代', '朝代']) || '未知';
     const artifactMaterial = pickFirstText(merged, ['material', '材质']) || '未知';
     const artifactDescription = pickFirstText(merged, ['description', 'desc', 'story', '内容简介', '详细介绍']) || '暂无详细描述';
+    const acupointText = pickFirstText(merged, ['acupoint', '穴位']);
 
     const herbNames = normalizeHerbs(
         pickFirstAny(merged, [
@@ -663,6 +684,9 @@ function buildResultFromBackend(apiData) {
     const descriptionParts = [artifactDescription, merged.story, merged.modern]
         .filter(Boolean)
         .map(item => String(item).trim());
+    if (acupointText) {
+        descriptionParts.push(`穴位/经络：${acupointText}`);
+    }
 
     const knowledgeSource = pickFirstText(merged, ['author', 'celebrity', '来源']) || '知识库';
     const knowledgeSummary = pickFirstText(merged, ['content_introduction', 'usage', 'benefit', 'value', 'function', 'description']);
@@ -675,15 +699,20 @@ function buildResultFromBackend(apiData) {
         efficacy: knowledgeSummary || '暂无补充说明'
     }];
 
-    const timeline = [
-        {
-            date: artifactDynasty || '未知时期',
-            title: artifactName || '知识条目',
-            desc: artifactDescription || '暂无描述'
-        }
-    ];
+    const historicalTimeline = normalizeHistoricalChanges(
+        merged.historical_changes || merged.historicalChanges
+    );
+    const timeline = historicalTimeline.length > 0
+        ? historicalTimeline
+        : [
+            {
+                date: artifactDynasty || '未知时期',
+                title: artifactName || '知识条目',
+                desc: artifactDescription || '暂无描述'
+            }
+        ];
 
-    if (knowledgeCulture) {
+    if (knowledgeCulture && !historicalTimeline.length) {
         timeline.push({
             date: '文化价值',
             title: '知识库补充',
