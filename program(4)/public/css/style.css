@@ -1639,9 +1639,9 @@ section {
 /* 文物信息卡片 */
 .artifact-info-card .card-body {
     display: grid;
-    grid-template-columns: minmax(320px, 420px) 1fr;
-    gap: 1.5rem;
-    align-items: center;
+    grid-template-columns: minmax(340px, 460px) 1fr;
+    gap: 1.75rem;
+    align-items: start;
 }
 
 .artifact-image-display {
@@ -1652,7 +1652,7 @@ section {
 
 .artifact-image-display img {
     width: 100%;
-    height: 200px;
+    height: clamp(260px, 32vw, 360px);
     object-fit: cover;
 }
 
@@ -1731,9 +1731,19 @@ section {
 }
 
 .artifact-description {
-    font-size: 0.9375rem;
+    font-size: 1rem;
     color: var(--text-light);
-    line-height: 1.8;
+    line-height: 1.9;
+}
+
+/* 智能识别-文物信息：描述全文展示，不省略 */
+.artifact-info-card #artifact-description {
+    display: block !important;
+    -webkit-line-clamp: unset !important;
+    -webkit-box-orient: initial !important;
+    overflow: visible !important;
+    white-space: pre-wrap;
+    word-break: break-word;
 }
 
 /* 药材网格 */

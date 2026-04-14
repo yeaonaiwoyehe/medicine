@@ -2337,7 +2337,7 @@ const ARTIFACTS_DATA = [
         image: "main-image/青铜药碾.jpeg",
         description: "此药碾为明代宫廷御药房所用，采用精铜铸造，碾槽内壁光滑细腻，用于研磨贵重药材。",
         confidence: 98.5,
-        pageUrl: "3D/药撵.html",
+        pageUrl: "3D/medicine_grinder.html",
     },
     {
         id: 2,
@@ -2348,7 +2348,7 @@ const ARTIFACTS_DATA = [
         image: "main-image\\灵芝标本.jpeg",
         description: "李时珍著，明万历年间金陵初刻本，是中国古代最完整的药学巨著。",
         confidence: 99.2,
-        pageUrl: "3D/灵芝.html",
+        pageUrl: "3D/lingzhi.html",
     },
     {
         id: 16,
@@ -2359,7 +2359,7 @@ const ARTIFACTS_DATA = [
         image: "main-image/《本草纲目》原刻本.jpeg",
         description: "本草纲目》，本草著作，52卷。明代李时珍（东璧）撰于嘉靖三十一年（1552年）至万历六年（1578年），稿凡三易，初刊于金陵（南京）。李时珍的长子李建中在任蓬溪知县期间，帮助李时珍编辑修订了《本草纲目》，并助该书出版。 被联合国教科文组织列入《世界记忆名录》的文献遗产",
         confidence: 99.2,
-        pageUrl: "3D/本草纲目.html",
+        pageUrl: "3D/compendium_of_materia_medica.html",
     },
     {
         id: 3,
@@ -2370,7 +2370,7 @@ const ARTIFACTS_DATA = [
         image: "main-image/青花瓷药瓶.jpeg",
         description: "清代官窑烧制的青花药瓶，用于储存名贵中药材，瓶身绘有灵芝祥云图案。",
         confidence: 97.8,
-        pageUrl: "3D/青花瓷药瓶.html",
+        pageUrl: "3D/blue_white_medicine_bottle.html",
     },
     {
         id: 4,
@@ -2381,7 +2381,7 @@ const ARTIFACTS_DATA = [
         image: "main-image/铜制针灸针.jpeg",
         description: "汉代铜制九针之一，针身细长，针尖锋利，是古代针灸医术的重要工具。",
         confidence: 96.4,
-        pageUrl: "3D/铜针.html",
+        pageUrl: "3D/bronze_acupuncture_needle.html",
     },
     {
         id: 5,
@@ -2392,7 +2392,7 @@ const ARTIFACTS_DATA = [
         image: "main-image/人参标本.jpeg",
         description: "清代宫廷珍藏的百年野山参标本，根须完整，形态优美，药用价值极高。",
         confidence: 95.6,
-        pageUrl: "3D/人参.html",
+        pageUrl: "3D/ginseng.html",
     },
     {
         id: 6,
@@ -2403,7 +2403,7 @@ const ARTIFACTS_DATA = [
         image: "main-image/铁制药刀.jpeg",
         description: "宋代药铺专用切药工具，刀身宽厚，刃口锋利，用于切制各类药材。",
         confidence: 94.2,
-        pageUrl: "3D/药刀.html",
+        pageUrl: "3D/herb_knife.html",
     },
     {
         id: 7,
@@ -2414,7 +2414,7 @@ const ARTIFACTS_DATA = [
         image: "main-image/《黄帝内经》抄本.jpeg",
         description: "唐代敦煌藏经洞出土的《黄帝内经》残卷，是研究中医理论的珍贵文献。",
         confidence: 98.9,
-        pageUrl: "3D/黄帝内经.html",
+        pageUrl: "3D/huangdi_neijing.html",
     },
     {
         id: 8,
@@ -2425,7 +2425,7 @@ const ARTIFACTS_DATA = [
         image: "main-image/玉制药杵.jpeg",
         description: "清代皇室专用的和田玉药棒，温润细腻，用于捣碎珍贵药材时不沾染杂质。",
         confidence: 97.3,
-        pageUrl: "3D/玉制药杵.html",
+        pageUrl: "3D/jade_pestle.html",
     },
     {
         id: 9,
@@ -2436,7 +2436,7 @@ const ARTIFACTS_DATA = [
         image: "main-image\\药罐.jpeg",
         description: "亦称“大清光绪年制”款青花“天下第一泉”题诗瓷盖罐。陶瓷类文物。小口短颈，鼓腹，体形硕大，罐口处置有平顶盖，盖面绘有龙戏珠图案，肩部是篆书的“天下第一泉”",
         confidence: 97.8,
-        pageUrl: "3D/药罐.html",
+        pageUrl: "3D/medicine_jar.html",
     },
     {
         id: 10,
@@ -2447,7 +2447,7 @@ const ARTIFACTS_DATA = [
         image: "main-image\\雕像1.jpg",
         description: "造像符合伏羲的传统神话形象特征：头生双角，以羽毛树叶制成衣物围身，赤足，和传说中伏羲始创中华文明、生于洪荒的设定吻合；雕像中伏羲双手捧持八卦图，对应“伏羲画八卦”的传说，《帝王世纪》记载伏羲画八卦后，梳理了阴阳、五行与百病的理法，还尝药制针，被尊为中华医药始祖之一。",
         confidence: 97.8,
-        pageUrl: "3D/雕像1.html",
+        pageUrl: "3D/fuxi_ivory_statue.html",
     },
     {
         id: 11,
@@ -2458,7 +2458,7 @@ const ARTIFACTS_DATA = [
         image: "main-image\\伤寒杂病论2.png",
         description: "此块木刻板主要讲述了后汉医圣张仲景所著《伤寒论》在历史上的散佚与流传，以及后人如刘昆湘、黄君竹斋等对其进行的补充和研究。",
         confidence: 97.8,
-        pageUrl: "3D/伤寒杂病论2.html",
+        pageUrl: "3D/shanghan_tablet.html",
     },
     {
         id: 12,
@@ -2469,7 +2469,7 @@ const ARTIFACTS_DATA = [
         image: "main-image\\冬虫夏草.jpg",
         description: "冬虫夏草多生于海拔3000-4000米的高寒山区，主要生于草原、河谷、草丛的土壤中。在中国主要分布于西藏、青海、甘肃、四川、贵州、云南等省（自治区）的高寒地带和雪山草原。冬虫夏草是中国特有的中药材，与人参、鹿茸并列为三大补品，功能与主治为补肾益肺、止血化痰",
         confidence: 97.8,
-        pageUrl: "3D/冬虫夏草.html",
+        pageUrl: "3D/cordyceps.html",
     },
     {
         id: 13,
@@ -2480,7 +2480,7 @@ const ARTIFACTS_DATA = [
         image: "main-image\\天麻.png",
         description: "天麻，中药名。为兰科植物天麻Gastrodia elata Bl.的干燥块茎。具有息风止痉，平抑肝阳，祛风通络的功效。主治肝风内动，惊痫抽搐，眩晕，头痛，肢体麻木，手足不遂，风湿痹痛等。",
         confidence: 97.8,
-        pageUrl: "3D/天麻.html",
+        pageUrl: "3D/gastrodia.html",
     },
     {
         id: 14,
@@ -2491,7 +2491,7 @@ const ARTIFACTS_DATA = [
         image: "main-image\\药坛.jpg",
         description: "此器用于存放“葠术健脾丸”，“葠”同“参”。参术健脾丸为滋补类成药，用于脾胃虚弱，食少便溏，消化不良，脘腹胀满。此器印有双龙戏珠纹，龙珠是龙的精华，是它们修炼的原神所在，人们在艺术表达中，通过两条龙对玉珠的争夺，象征着人们对美好生活的追求。",
         confidence: 97.8,
-        pageUrl: "3D/药坛.html",
+        pageUrl: "3D/medicine_vat.html",
     },
     {
         id: 15,
@@ -2502,7 +2502,7 @@ const ARTIFACTS_DATA = [
         image: "main-image\\研钵.png",
         description: "此研钵纹饰丰富，画面饱满，线条勾画精美，人物特色鲜明、栩栩如生。用于研磨中药材。",
         confidence: 97.8,
-        pageUrl: "3D/研钵.html",
+        pageUrl: "3D/mortar_bowl.html",
     },
 ];
 

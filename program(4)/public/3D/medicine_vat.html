@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
@@ -61,7 +61,7 @@
     scene.background = new THREE.Color(0x1a1a2e);
 
     const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.set(1.5, 1.5, 3)
+    camera.position.set(30, 30, 60)
     camera.lookAt(0, 0, 0);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -129,7 +129,7 @@
 
     // --- 4. 加载模型 ---
     const loader = new GLTFLoader();
-    const modelPath = new URL('./models/灵芝.glb', window.location.href).href;
+    const modelPath = new URL('./models/medicine_vat.glb', window.location.href).href;
 
     loader.load(modelPath, (gltf) => {
       const model = gltf.scene;
