@@ -7,6 +7,8 @@ let artifactsSwiper = null;
 let currentTheme = 'light';
 let uploadedFile = null;
 let currentUser = null;
+const REGISTERED_USERS_KEY = 'registeredUsers';
+const CURRENT_USER_KEY = 'currentUser';
 const UPLOAD_API_URL = window.UPLOAD_API_URL || 'http://39.107.123.87:5000/upload';
 const LOCAL_KNOWLEDGE_FALLBACK = {
     'bianshi_001.jpg': {
@@ -50,9 +52,11 @@ async function initializeApp() {
     initCharts();
     initKnowledgeGraphObserver();
     initRecommendations();
+    initEncyclopediaSystem();
     initBackToTop();
     initNumberAnimations();
     initAuthSystem();
+    initAccessGuards();
 
     // 移除加载屏幕
     hideLoadingScreen();
@@ -123,6 +127,10 @@ function initNavbar() {
                 const targetId = href.slice(1);
                 utils.scrollToSection(targetId);
             } else if (!href.startsWith('http')) {
+                if (!isRouteAllowedWithoutAuth(href) && !requireAuth('请先登录后再访问该功能')) {
+                    e.preventDefault();
+                    return;
+                }
                 e.preventDefault();
                 utils.navigateWithLoading(href);
             }
@@ -215,7 +223,7 @@ function initArtifactsSwiper() {
                             <i class="fas fa-eye"></i> 快速查看
                         </button>
                         <button class="artifact-quick-view3d">
-                             <i class="fas fa-cube"></i> 查看3D模型
+                             <i class="fas fa-cube"></i> 查看3D建模
                         </button>
                     </div>
                 </div>
@@ -271,25 +279,32 @@ function initArtifactsSwiper() {
         });
     });
 
-    // 快速查看按钮
-    document.querySelectorAll('.artifact-quick-view').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const card = btn.closest('.artifact-card');
+    // 卡片交互统一为打开同一详情弹窗
+    document.querySelectorAll('.artifact-card').forEach(card => {
+        card.addEventListener('click', () => {
             const artifactId = parseInt(card.getAttribute('data-id'));
             showArtifactDetail(artifactId);
         });
     });
-    document.querySelectorAll('.artifact-quick-view3d').forEach(btn => {
+
+    document.querySelectorAll('.artifact-quick-view, .artifact-quick-view3d').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
             const card = btn.closest('.artifact-card');
             const artifactId = parseInt(card.getAttribute('data-id'));
-
             const artifact = ARTIFACTS_DATA.find(item => item.id === artifactId);
-            if (artifact && artifact.pageUrl) {
+            if (!artifact) return;
+
+            if (btn.classList.contains('artifact-quick-view3d')) {
+                if (!artifact.pageUrl) {
+                    utils.showToast('该文物暂未配置3D模型页面', 'warning');
+                    return;
+                }
                 window.open(artifact.pageUrl, '_blank');
+                return;
             }
+
+            showArtifactDetail(artifactId);
         });
     });
 }
@@ -391,6 +406,24 @@ function initHeroDynamicContent() {
 }
 
 // 显示文物详情
+function buildArtifactExtension(artifact) {
+    const typeHints = {
+        "器具": "器身结构强调实用性，常见握持、切削或捣研痕迹。",
+        "文献": "版式与字体信息可反映版本流传、校勘与传抄路径。",
+        "标本": "形态、纹理和颜色层次是判读药性与来源的重要线索。",
+        "容器": "容量、口沿和纹饰组合多用于指示用途与时代审美。"
+    };
+
+    return {
+        summary: `${artifact.name}以${artifact.material}材质呈现，图像中可见其${artifact.type}属性明确，整体风格与${artifact.dynasty}器物特征相吻合。`,
+        points: [
+            `图像观察：轮廓与主体比例稳定，便于识别其核心用途。`,
+            `材质线索：${artifact.material}的表面质感与反光/纹理表现较为典型。`,
+            `功能推断：作为${artifact.type}，${typeHints[artifact.type] || "其造型与使用场景之间存在较强对应关系。"}`
+        ]
+    };
+}
+
 function showArtifactDetail(artifactId) {
     const artifact = ARTIFACTS_DATA.find(a => a.id === artifactId);
     if (!artifact) return;
@@ -405,29 +438,18 @@ function showArtifactDetail(artifactId) {
     document.getElementById('detail-type').textContent = artifact.type;
     document.getElementById('detail-material').textContent = artifact.material;
     document.getElementById('detail-description').textContent = artifact.description;
+    const extension = buildArtifactExtension(artifact);
+    const extensionSummary = document.getElementById('detail-extension-summary');
+    const extensionList = document.getElementById('detail-extension-list');
+
+    if (extensionSummary) extensionSummary.textContent = extension.summary;
+    if (extensionList) {
+        extensionList.innerHTML = extension.points.map(point => `<li>${point}</li>`).join('');
+    }
 
     // 显示弹窗
     modal.classList.add('active');
     document.body.style.overflow = 'hidden'; // 禁止滚动
-
-    // 初始化弹窗内的迷你知识图谱
-    setTimeout(() => {
-        const miniGraph = echarts.init(document.getElementById('detail-mini-graph'));
-        // 这里可以使用 charts.js 中定义的配置
-        if (typeof charts !== 'undefined' && charts.getMiniGraphOption) {
-            miniGraph.setOption(charts.getMiniGraphOption(artifact.name));
-        } else {
-            // 兜底简单配置
-            miniGraph.setOption({
-                series: [{
-                    type: 'graph',
-                    layout: 'force',
-                    data: [{ name: artifact.name, symbolSize: 50 }, { name: artifact.dynasty }, { name: artifact.material }],
-                    links: [{ source: 0, target: 1 }, { source: 0, target: 2 }]
-                }]
-            });
-        }
-    }, 300);
 
     // 绑定关闭事件
     const closeBtn = document.getElementById('artifact-detail-close');
@@ -497,6 +519,7 @@ function initUploadArea() {
 
     // 开始分析
     analyzeBtn.addEventListener('click', () => {
+        if (!requireAuth('请先登录后再进行智能识别')) return;
         if (uploadedFile) {
             startAnalysis();
         }
@@ -504,12 +527,15 @@ function initUploadArea() {
 
     // 演示按钮
     demoBtn.addEventListener('click', () => {
+        if (!requireAuth('请先登录后再使用演示识别')) return;
         runDemo();
     });
 }
 
 // 处理文件选择
 async function handleFileSelect(file) {
+    if (!requireAuth('请先登录后再上传图片')) return;
+
     const allowedTypes = ['png', 'jpg', 'jpeg', 'webp'];
 
     if (!utils.validateFileType(file, allowedTypes)) {
@@ -781,16 +807,23 @@ function showResults(result) {
         </div>
     `).join('');
 
-    // 更新时间线
-    const timeline = document.getElementById('timeline');
-    timeline.innerHTML = result.timeline.map((item, index) => `
-        <div class="timeline-item ${index === result.timeline.length - 1 ? 'active' : ''}">
-            <div class="timeline-dot"></div>
-            <div class="timeline-date">${item.date}</div>
-            <div class="timeline-title">${item.title}</div>
-            <div class="timeline-desc">${item.desc}</div>
-        </div>
-    `).join('');
+    // 更新横向历史时间轴（来自数据库/后端结果）
+    const timelineHorizontal = document.getElementById('timeline-horizontal');
+    if (timelineHorizontal) {
+        const timelineData = Array.isArray(result.timeline) ? result.timeline : [];
+        if (!timelineData.length) {
+            timelineHorizontal.innerHTML = '<div class="timeline-horizontal-empty">暂无历史变革数据</div>';
+        } else {
+            timelineHorizontal.innerHTML = timelineData.map(item => `
+                <div class="timeline-horizontal-item">
+                    <span class="timeline-horizontal-dot"></span>
+                    <div class="timeline-horizontal-date">${item.date || '未知时期'}</div>
+                    <div class="timeline-horizontal-title">${item.title || '历史节点'}</div>
+                    <div class="timeline-horizontal-desc">${item.desc || '暂无描述'}</div>
+                </div>
+            `).join('');
+        }
+    }
 
     // 显示结果区域
     resultSection.style.display = 'block';
@@ -799,11 +832,6 @@ function showResults(result) {
     setTimeout(() => {
         utils.scrollToSection('result-section');
     }, 300);
-
-    // 初始化迷你知识图谱
-    setTimeout(() => {
-        charts.initMiniKnowledgeGraph();
-    }, 500);
 
     utils.showToast('识别完成！', 'success');
 }
@@ -1250,6 +1278,398 @@ function initRecommendations() {
             showContentDetail(RECOMMEND_DATA[index]);
         });
     });
+}
+
+function initEncyclopediaSystem() {
+    const gridEl = document.getElementById('ency-grid');
+    const topTabs = document.getElementById('ency-top-tabs');
+    const subcatsEl = document.getElementById('ency-subcats');
+    const searchInput = document.getElementById('ency-search-input');
+    const favToggleBtn = document.getElementById('ency-favorite-toggle');
+    const shareBtn = document.getElementById('ency-share-btn');
+    const printBtn = document.getElementById('ency-print-btn');
+    const clearNoteBtn = document.getElementById('ency-clear-note-btn');
+    const modal = document.getElementById('ency-modal');
+    const modalBackdrop = document.getElementById('ency-modal-backdrop');
+    const modalClose = document.getElementById('ency-modal-close');
+    const modalContent = document.getElementById('ency-modal-content');
+    if (!gridEl || !topTabs || !subcatsEl || !searchInput || !favToggleBtn || !modal || !modalContent) return;
+
+    const items = buildEncyclopediaItems();
+    const state = {
+        top: 'artifact',
+        sub: 'all',
+        keyword: '',
+        onlyFavorite: false,
+        selectedId: '',
+        items,
+        favorites: new Set(readJson('encyFavorites', [])),
+        notes: readJson('encyNotes', {})
+    };
+
+    const updateSubcats = () => {
+        const list = ['all', ...new Set(state.items.filter(item => item.top === state.top).map(item => item.sub))];
+        subcatsEl.innerHTML = list.map(name => `
+            <button class="tool-btn ${name === state.sub ? 'active' : ''}" data-sub="${name}">
+                ${name === 'all' ? '全部分类' : name}
+            </button>
+        `).join('');
+    };
+
+    const getFilteredItems = () => state.items.filter(item => {
+        if (item.top !== state.top) return false;
+        if (state.sub !== 'all' && item.sub !== state.sub) return false;
+        if (state.onlyFavorite && !state.favorites.has(item.id)) return false;
+        if (!state.keyword) return true;
+        const text = `${item.name} ${item.era} ${item.desc} ${item.topLabel} ${item.sub}`.toLowerCase();
+        return text.includes(state.keyword.toLowerCase());
+    });
+
+    const renderGrid = () => {
+        const list = getFilteredItems();
+        if (!list.length) {
+            gridEl.innerHTML = '<div class="ency-empty">未检索到相关条目，请调整分类或关键词。</div>';
+            return;
+        }
+        gridEl.innerHTML = list.map(item => `
+            <article class="ency-card ${state.selectedId === item.id ? 'active' : ''}" data-item-id="${item.id}">
+                <img class="ency-card-img" src="${item.image}" alt="${item.name}" loading="lazy">
+                <div class="ency-card-body">
+                    <div class="ency-card-title">${item.name}</div>
+                    <div class="ency-card-meta">${item.era || '未知朝代'} · ${item.sub}</div>
+                    <div class="ency-card-desc">${item.desc}</div>
+                </div>
+            </article>
+        `).join('');
+    };
+
+    const renderModal = () => {
+        const current = state.items.find(item => item.id === state.selectedId);
+        if (!current) {
+            modalContent.innerHTML = '';
+            return;
+        }
+        const related = current.relatedIds
+            .map(id => state.items.find(item => item.id === id))
+            .filter(Boolean);
+        const isFav = state.favorites.has(current.id);
+        const noteText = state.notes[current.id] || '';
+        modalContent.innerHTML = `
+            <div class="ency-modal-grid">
+                <div>
+                    <img class="ency-modal-image" src="${current.image}" alt="${current.name}">
+                </div>
+                <div>
+                    <h3 class="ency-modal-title">${current.name}</h3>
+                    <p class="ency-card-meta">${current.topLabel} · ${current.sub} · ${current.era || '未知朝代'}</p>
+                    <p class="ency-modal-text" style="margin-top:.7rem;">${current.desc}</p>
+                    <p class="ency-modal-text" style="margin-top:.6rem;"><strong>核心知识：</strong>${current.core}</p>
+                    <div style="margin-top:.8rem;">
+                        <button class="tool-btn" id="ency-toggle-fav-btn"><i class="fas ${isFav ? 'fa-star' : 'fa-star-half-stroke'}"></i> ${isFav ? '取消收藏' : '加入收藏'}</button>
+                    </div>
+                    <div style="margin-top:.9rem;">
+                        <h4>关联知识</h4>
+                        <div class="ency-rel-list">
+                            ${related.length ? related.map(item => `<button class="ency-rel-btn" data-target-id="${item.id}">${item.name}</button>`).join('') : '<span class="ency-card-meta">暂无关联项</span>'}
+                        </div>
+                    </div>
+                    <div class="ency-note-box" style="margin-top:1rem;">
+                        <h4>个人笔记</h4>
+                        <textarea id="ency-note-input" placeholder="记录你的学习要点...">${noteText}</textarea>
+                        <button class="tool-btn" id="ency-save-note-btn" style="margin-top:.5rem;"><i class="fas fa-save"></i> 保存笔记</button>
+                    </div>
+                </div>
+            </div>
+        `;
+    };
+
+    const renderAll = () => {
+        updateSubcats();
+        renderGrid();
+        favToggleBtn.classList.toggle('active', state.onlyFavorite);
+    };
+
+    topTabs.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-top]');
+        if (!btn) return;
+        topTabs.querySelectorAll('[data-top]').forEach(node => node.classList.remove('active'));
+        btn.classList.add('active');
+        state.top = btn.getAttribute('data-top');
+        state.sub = 'all';
+        state.selectedId = '';
+        renderAll();
+    });
+
+    subcatsEl.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-sub]');
+        if (!btn) return;
+        state.sub = btn.getAttribute('data-sub');
+        renderAll();
+    });
+
+    searchInput.addEventListener('input', (e) => {
+        state.keyword = e.target.value.trim();
+        renderGrid();
+    });
+
+    favToggleBtn.addEventListener('click', () => {
+        state.onlyFavorite = !state.onlyFavorite;
+        renderGrid();
+        favToggleBtn.classList.toggle('active', state.onlyFavorite);
+    });
+
+    gridEl.addEventListener('click', (e) => {
+        const card = e.target.closest('[data-item-id]');
+        if (!card) return;
+        state.selectedId = card.getAttribute('data-item-id');
+        renderModal();
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    });
+
+    modalContent.addEventListener('click', (e) => {
+        const relBtn = e.target.closest('[data-target-id]');
+        if (relBtn) {
+            const targetId = relBtn.getAttribute('data-target-id');
+            const target = state.items.find(item => item.id === targetId);
+            if (!target) return;
+            state.top = target.top;
+            state.sub = 'all';
+            state.selectedId = targetId;
+            topTabs.querySelectorAll('[data-top]').forEach(node => {
+                node.classList.toggle('active', node.getAttribute('data-top') === state.top);
+            });
+            renderAll();
+            renderModal();
+            return;
+        }
+
+        const favBtn = e.target.closest('#ency-toggle-fav-btn');
+        if (favBtn && state.selectedId) {
+            if (state.favorites.has(state.selectedId)) state.favorites.delete(state.selectedId);
+            else state.favorites.add(state.selectedId);
+            localStorage.setItem('encyFavorites', JSON.stringify([...state.favorites]));
+            renderModal();
+            return;
+        }
+
+        const saveBtn = e.target.closest('#ency-save-note-btn');
+        if (saveBtn && state.selectedId) {
+            const input = modalContent.querySelector('#ency-note-input');
+            state.notes[state.selectedId] = input ? input.value.trim() : '';
+            localStorage.setItem('encyNotes', JSON.stringify(state.notes));
+            utils.showToast('笔记已保存', 'success');
+        }
+    });
+
+    const closeModal = () => {
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+    };
+    modalBackdrop?.addEventListener('click', closeModal);
+    modalClose?.addEventListener('click', closeModal);
+
+    shareBtn?.addEventListener('click', async () => {
+        const current = state.items.find(item => item.id === state.selectedId);
+        if (!current) {
+            utils.showToast('请先选择一个条目再分享', 'warning');
+            return;
+        }
+        const text = `${current.name} - ${current.core}`;
+        try {
+            await navigator.clipboard.writeText(text);
+            utils.showToast('条目信息已复制，可直接分享', 'success');
+        } catch {
+            utils.showToast('复制失败，请手动复制', 'error');
+        }
+    });
+
+    printBtn?.addEventListener('click', () => {
+        if (!state.selectedId) {
+            utils.showToast('请先选择一个条目再打印', 'warning');
+            return;
+        }
+        window.print();
+    });
+
+    clearNoteBtn?.addEventListener('click', () => {
+        if (!state.selectedId) return;
+        delete state.notes[state.selectedId];
+        localStorage.setItem('encyNotes', JSON.stringify(state.notes));
+        renderModal();
+        utils.showToast('当前条目笔记已清空', 'info');
+    });
+
+    renderAll();
+}
+
+function readJson(key, fallbackValue) {
+    try {
+        const value = localStorage.getItem(key);
+        if (!value) return fallbackValue;
+        return JSON.parse(value);
+    } catch {
+        return fallbackValue;
+    }
+}
+
+function buildEncyclopediaItems() {
+    const artifactItems = (ARTIFACTS_DATA || []).map(item => ({
+        id: `artifact-${item.id}`,
+        top: 'artifact',
+        topLabel: '中医药器具',
+        sub: mapArtifactSubType(item),
+        name: item.name,
+        image: item.image,
+        era: item.dynasty,
+        desc: item.description,
+        core: `${item.material}材质，类别为${item.type}，可用于教学与文物认知。`,
+        relatedIds: []
+    }));
+
+    const herbSeed = [
+        { name: '人参', property: '甘、微苦，微温', efficacy: '大补元气、复脉固脱', image: 'main-image/人参.png' },
+        { name: '黄芪', property: '甘，微温', efficacy: '补气升阳、固表止汗', image: 'main-image/黄芪.png' },
+        { name: '当归', property: '甘、辛，温', efficacy: '补血活血、调经止痛', image: 'main-image/当归.png' },
+        { name: '白术', property: '苦、甘，温', efficacy: '健脾益气、燥湿利水', image: 'main-image/白术.jpg' },
+        { name: '茯苓', property: '甘、淡，平', efficacy: '利水渗湿、健脾宁心' ,image:'main-image/茯苓.jpg'},
+        { name: '甘草', property: '甘，平', efficacy: '补脾益气、调和诸药', image:'main-image/甘草.jpg'},
+        { name: '熟地黄', property: '甘，微温', efficacy: '滋阴补血、益精填髓', image:'main-image/熟地黄.jpg' },
+        { name: '山药', property: '甘，平', efficacy: '补脾养胃、补肾涩精', image:'main-image/山药.jpg' },
+        { name: '山茱萸', property: '酸、涩，微温', efficacy: '补益肝肾、收敛固涩', image:'main-image/山茱萸.jpg'},
+        { name: '丹参', property: '苦，微寒', efficacy: '活血祛瘀、凉血安神', image:'main-image/丹参.jpg' },
+        { name: '川芎', property: '辛，温', efficacy: '活血行气、祛风止痛', image:'main-image/川芎.jpg' },
+        { name: '白芍', property: '苦、酸，微寒', efficacy: '养血调经、柔肝止痛', image:'main-image/白芍.jpg' },
+        { name: '柴胡', property: '苦、辛，微寒', efficacy: '疏肝解郁、和解少阳', image:'main-image/柴胡.jpg' },
+        { name: '黄连', property: '苦，寒', efficacy: '清热燥湿、泻火解毒', image:'main-image/黄连.jpg' },
+        { name: '黄芩', property: '苦，寒', efficacy: '清热燥湿、泻火除烦', image:'main-image/黄芩.jpg' },
+        { name: '连翘', property: '苦，微寒', efficacy: '清热解毒、消肿散结', image:'main-image/连翘.jpg' },
+        { name: '金银花', property: '甘，寒', efficacy: '清热解毒、疏散风热', image:'main-image/金银花.jpg' },
+        { name: '板蓝根', property: '苦，寒', efficacy: '清热解毒、凉血利咽', image:'main-image/板蓝根.jpg' },
+        { name: '枸杞子', property: '甘，平', efficacy: '滋补肝肾、益精明目', image:'main-image/枸杞子.jpg' },
+        { name: '菊花', property: '甘、苦，微寒', efficacy: '疏风清热、平肝明目', image:'main-image/菊花.jpg' },
+        { name: '决明子', property: '甘、苦、咸，微寒', efficacy: '清肝明目、润肠通便', image:'main-image/决明子.jpg' },
+        { name: '天麻', property: '甘，平', efficacy: '息风止痉、平抑肝阳', image:'main-image/天麻.jpg' },
+        { name: '钩藤', property: '甘，微寒', efficacy: '息风止痉、清热平肝', image:'main-image/钩藤.jpg' },
+        { name: '半夏', property: '辛，温；有毒', efficacy: '燥湿化痰、降逆止呕', image:'main-image/半夏.jpg' },
+        { name: '陈皮', property: '辛、苦，温', efficacy: '理气健脾、燥湿化痰', image:'main-image/陈皮.jpg' },
+        { name: '麦冬', property: '甘、微苦，微寒', efficacy: '养阴生津、润肺清心', image:'main-image/麦冬.jpg' },
+        { name: '五味子', property: '酸、甘，温', efficacy: '收敛固涩、益气生津', image:'main-image/五味子.jpg' },
+        { name: '附子', property: '辛、甘，大热；有毒', efficacy: '回阳救逆、补火助阳', image:'main-image/附子.jpg' },
+        { name: '肉桂', property: '辛、甘，大热', efficacy: '补火助阳、散寒止痛', image:'main-image/肉桂.jpg' },
+        { name: '杜仲', property: '甘，温', efficacy: '补肝肾、强筋骨', image: 'main-image/杜仲.jpg' }
+    ];
+    const herbItems = herbSeed.map((item, index) => ({
+        id: `herb-${index + 1}`,
+        top: 'herb',
+        topLabel: '中药材标本',
+        sub: mapHerbSubType(item.name),
+        name: item.name,
+        image: item.image || `main-image/${item.name}.jpeg`,
+        era: '传统本草',
+        desc: `${item.name}，性味${item.property}，常见功效为${item.efficacy}。`,
+        core: `药材属性：${item.property}；核心功效：${item.efficacy}。`,
+        relatedIds: []
+    }));
+
+    const doctorSeed = [
+        { id: 1, name: '扁鹊', era: '战国', desc: '以望闻问切与针砭术闻名，是先秦医学代表人物。', core: '开创四诊思路，推动临床辨识发展。', image:'main-image/扁鹊.jpg' },
+        { id: 2, name: '淳于意', era: '西汉', desc: '著有《诊籍》，重视病案记录与诊疗过程追踪。', core: '中国早期病案医学实践代表。', image:'main-image/淳于意.jpg' },
+        { id: 3, name: '张仲景', era: '东汉', desc: '著有《伤寒杂病论》，奠定辨证论治基础。', core: '经方体系奠基者。', image:'main-image/张仲景.jpg' },
+        { id: 4, name: '华佗', era: '东汉', desc: '擅长外科与针灸，相传创制麻沸散与五禽戏。', core: '外科麻醉与康复导引的重要先驱。', image:'main-image/华佗.jpg' },
+        { id: 5, name: '王叔和', era: '西晋', desc: '编撰《脉经》，系统整理脉学理论与临床应用。', core: '脉学体系标准化关键人物。', image:'main-image/王叔和.jpg' },
+        { id: 6, name: '葛洪', era: '东晋', desc: '著有《肘后备急方》，强调急症简便治疗。', core: '急症医学与方药实用化代表。', image:'main-image/葛洪.jpg' },
+        { id: 7, name: '陶弘景', era: '南朝梁', desc: '整理《本草经集注》，推动本草分类与校勘。', core: '本草文献整理与药性体系完善者。', image:'main-image/陶弘景.jpg' },
+        { id: 8, name: '巢元方', era: '隋代', desc: '主持编撰《诸病源候论》，重视病因病机分析。', core: '病因病机学系统化代表。', image:'main-image/巢元方.jpg' },
+        { id: 9, name: '孙思邈', era: '唐代', desc: '著有《千金要方》《千金翼方》，倡导“大医精诚”。', core: '医德与临床并重的典范。', image:'main-image/孙思邈.jpg' },
+        { id: 10, name: '王焘', era: '唐代', desc: '编著《外台秘要》，汇集前代医方与经验。', core: '大型医方文献集成者。', image:'main-image/王焘.jpg' },
+        { id: 11, name: '钱乙', era: '北宋', desc: '著有《小儿药证直诀》，创立儿科辨证体系。', core: '中医儿科奠基人物。', image:'main-image/钱乙.jpg' },
+        { id: 12, name: '王惟一', era: '北宋', desc: '主持铸造针灸铜人并校定腧穴，推动针灸标准化。', core: '针灸教学与穴位标准化代表。', image:'main-image/王惟一.jpg' },
+        { id: 13, name: '陈无择', era: '南宋', desc: '提出“三因学说”，强调内外因与不内外因辨析。', core: '病因分类理论重要发展者。', image:'main-image/陈无择.jpg' },
+        { id: 14, name: '朱丹溪', era: '元代', desc: '倡导“阳常有余，阴常不足”，重视养阴学说。', core: '金元四大家之一，滋阴理论代表。', image:'main-image/朱丹溪.jpg' },
+        { id: 15, name: '李杲', era: '金代', desc: '著有《脾胃论》，提出“内伤脾胃，百病由生”。', core: '补土派代表，脾胃学说核心人物。', image:'main-image/李杲.jpg' },
+        { id: 16, name: '张从正', era: '金代', desc: '主张汗吐下三法，重视邪实祛除。', core: '攻邪派代表，治法理论鲜明。', image:'main-image/张从正.jpg' },
+        { id: 17, name: '叶天士', era: '清代', desc: '完善温病卫气营血辨证体系。', core: '温病学临床体系关键人物。', image:'main-image/叶天士.jpg' },
+        { id: 18, name: '吴鞠通', era: '清代', desc: '著有《温病条辨》，推动温病理论系统化。', core: '温病学经典理论建构者。', image:'main-image/吴鞠通.jpg' },
+        { id: 19, name: '李时珍', era: '明代', desc: '著有《本草纲目》，系统总结本草学。', core: '本草学集大成者。', image:'main-image/李时珍.jpg' },
+        { id: 20, name: '张景岳', era: '明代', desc: '著有《景岳全书》，重视温补与辨证治本。', core: '明代临床医学与理论综合代表。', image:'main-image/张景岳.jpg' },
+    ];
+    const doctorItems = doctorSeed.map(item => ({
+        id: `doctor-${item.id}`,
+        top: 'doctor',
+        topLabel: '历代医家',
+        sub: item.era,
+        name: item.name,
+        image: item.image || 'main-image/《本草纲目》原刻本.jpeg',
+        era: item.era,
+        desc: item.desc,
+        core: item.core,
+        relatedIds: []
+    }));
+
+    const allItems = [...artifactItems, ...herbItems, ...doctorItems];
+
+    artifactItems.forEach((item, index) => {
+        const herb = herbItems[index % herbItems.length];
+        const doctor = doctorItems[index % doctorItems.length];
+        item.relatedIds = [herb?.id, doctor?.id].filter(Boolean);
+    });
+    herbItems.forEach((item, index) => {
+        const doctor = doctorItems[index % doctorItems.length];
+        const artifact = artifactItems[index % artifactItems.length];
+        item.relatedIds = [artifact?.id, doctor?.id].filter(Boolean);
+    });
+    doctorItems.forEach((item, index) => {
+        const herb = herbItems[index % herbItems.length];
+        const artifact = artifactItems[index % artifactItems.length];
+        item.relatedIds = [herb?.id, artifact?.id].filter(Boolean);
+    });
+
+    return allItems;
+}
+
+function ensureMinItemsPerSubcategory(items, minCount = 18) {
+    const grouped = new Map();
+    items.forEach(item => {
+        const key = `${item.top}::${item.sub}`;
+        grouped.set(key, (grouped.get(key) || 0) + 1);
+    });
+    const deficientGroups = [];
+    grouped.forEach((count, key) => {
+        if (count < minCount) deficientGroups.push(`${key}(${count}/${minCount})`);
+    });
+    if (deficientGroups.length) {
+        console.warn(`[百科提示] 以下小类真实条目不足 ${minCount} 条：`, deficientGroups.join(', '));
+    }
+    return items;
+}
+
+function topLabelByKey(top) {
+    const map = {
+        artifact: '中医药器具',
+        herb: '中药材标本',
+        doctor: '历代医家'
+    };
+    return map[top] || top;
+}
+
+function mapArtifactSubType(item) {
+    const text = `${item.name}${item.type}`;
+    if (/碾|杵|钵|研/.test(text)) return '粉碎研磨';
+    if (/刀|切/.test(text)) return '切制加工';
+    if (/炉|煎|灶/.test(text)) return '煎煮炮制';
+    if (/瓶|罐|坛|容器/.test(text)) return '盛药制剂';
+    return '理疗养生';
+}
+
+function mapHerbSubType(name) {
+    if (/参|麻|草|根/.test(name)) return '根类';
+    if (/叶/.test(name)) return '叶类';
+    if (/花/.test(name)) return '花类';
+    if (/果|枣|子/.test(name)) return '果实类';
+    if (/石|朱砂|矿/.test(name)) return '矿物类';
+    if (/鹿|虫|蛤|海马/.test(name)) return '动物类';
+    return '茎类';
 }
 
 // 显示内容详情 (推荐位)
@@ -2610,11 +3030,27 @@ const MOCK_RECOGNITION_RESULT = {
 // 初始化认证系统
 function initAuthSystem() {
     // 检查本地存储的用户信息
-    const savedUser = localStorage.getItem('currentUser');
+    const savedUser = localStorage.getItem(CURRENT_USER_KEY);
     if (savedUser) {
-        currentUser = JSON.parse(savedUser);
-        updateAuthButton();
+        try {
+            const parsedUser = JSON.parse(savedUser);
+            const registeredUsers = getRegisteredUsers();
+            const matched = registeredUsers.find(user => user.email === parsedUser.email);
+            if (matched) {
+                currentUser = {
+                    id: matched.id,
+                    username: matched.username,
+                    email: matched.email,
+                    avatar: matched.avatar || 'placeholder-user.jpg'
+                };
+            } else {
+                localStorage.removeItem(CURRENT_USER_KEY);
+            }
+        } catch {
+            localStorage.removeItem(CURRENT_USER_KEY);
+        }
     }
+    updateAuthButton();
 
     // 绑定认证按钮事件
     const authButton = document.getElementById('auth-button');
@@ -2706,40 +3142,46 @@ function switchAuthForm(formType) {
 function handleLogin(event) {
     event.preventDefault();
 
-    const email = document.getElementById('login-email').value;
+    const email = document.getElementById('login-email').value.trim().toLowerCase();
     const password = document.getElementById('login-password').value;
 
-    // 模拟登录验证
-    if (email && password) {
-        // 在实际应用中，这里应该发送API请求到后端验证
-        const user = {
-            id: Date.now(),
-            username: email.split('@')[0],
-            email: email,
-            avatar: 'placeholder-user.jpg'
-        };
-
-        currentUser = user;
-        localStorage.setItem('currentUser', JSON.stringify(user));
-
-        updateAuthButton();
-        closeAuthModal();
-
-        utils.showToast('登录成功！', 'success');
-
-        // 清空表单
-        event.target.reset();
-    } else {
+    if (!email || !password) {
         utils.showToast('请填写完整的登录信息', 'error');
+        return;
     }
+
+    const registeredUsers = getRegisteredUsers();
+    const matchedUser = registeredUsers.find(user => user.email === email);
+    if (!matchedUser) {
+        utils.showToast('该邮箱尚未注册，请先注册后登录', 'warning');
+        switchAuthForm('register');
+        return;
+    }
+
+    if (matchedUser.password !== password) {
+        utils.showToast('密码错误，请重新输入', 'error');
+        return;
+    }
+
+    currentUser = {
+        id: matchedUser.id,
+        username: matchedUser.username,
+        email: matchedUser.email,
+        avatar: matchedUser.avatar || 'placeholder-user.jpg'
+    };
+    localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(currentUser));
+    updateAuthButton();
+    closeAuthModal();
+    utils.showToast(`欢迎回来，${currentUser.username}`, 'success');
+    event.target.reset();
 }
 
 // 处理注册
 function handleRegister(event) {
     event.preventDefault();
 
-    const username = document.getElementById('register-username').value;
-    const email = document.getElementById('register-email').value;
+    const username = document.getElementById('register-username').value.trim();
+    const email = document.getElementById('register-email').value.trim().toLowerCase();
     const password = document.getElementById('register-password').value;
     const confirmPassword = document.getElementById('register-confirm-password').value;
 
@@ -2759,16 +3201,32 @@ function handleRegister(event) {
         return;
     }
 
-    // 模拟注册过程
+    const registeredUsers = getRegisteredUsers();
+    const emailExists = registeredUsers.some(user => user.email === email);
+    if (emailExists) {
+        utils.showToast('该邮箱已注册，请直接登录', 'warning');
+        switchAuthForm('login');
+        return;
+    }
+
     const user = {
         id: Date.now(),
         username: username,
         email: email,
+        password: password,
         avatar: 'placeholder-user.jpg'
     };
 
-    currentUser = user;
-    localStorage.setItem('currentUser', JSON.stringify(user));
+    registeredUsers.push(user);
+    saveRegisteredUsers(registeredUsers);
+
+    currentUser = {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        avatar: user.avatar
+    };
+    localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(currentUser));
 
     updateAuthButton();
     closeAuthModal();
@@ -2783,7 +3241,7 @@ function handleRegister(event) {
 function handleLogout() {
     if (confirm('确定要退出登录吗？')) {
         currentUser = null;
-        localStorage.removeItem('currentUser');
+        localStorage.removeItem(CURRENT_USER_KEY);
         updateAuthButton();
         utils.showToast('已退出登录', 'info');
     }
@@ -2795,11 +3253,11 @@ function updateAuthButton() {
     if (!authButton) return;
 
     if (currentUser) {
-        // 已登录状态：显示用户头像
+        // 已登录状态：显示用户名
         authButton.classList.add('authenticated');
         authButton.innerHTML = `
             <img src="${currentUser.avatar}" alt="${currentUser.username}" class="user-avatar">
-            <span class="auth-text">${currentUser.username}</span>
+            <span class="auth-text">${currentUser.username} | 退出</span>
         `;
     } else {
         // 未登录状态：显示登录/注册文字
@@ -2822,14 +3280,14 @@ window.authAPI = {
     // 手动登录（供外部调用）
     login: (userData) => {
         currentUser = userData;
-        localStorage.setItem('currentUser', JSON.stringify(userData));
+        localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(userData));
         updateAuthButton();
     },
 
     // 手动登出（供外部调用）
     logout: () => {
         currentUser = null;
-        localStorage.removeItem('currentUser');
+        localStorage.removeItem(CURRENT_USER_KEY);
         updateAuthButton();
     },
 
@@ -2853,3 +3311,44 @@ window.authAPI = {
         }
     }
 };
+
+function getRegisteredUsers() {
+    try {
+        const raw = localStorage.getItem(REGISTERED_USERS_KEY);
+        if (!raw) return [];
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
+    } catch {
+        return [];
+    }
+}
+
+function saveRegisteredUsers(users) {
+    localStorage.setItem(REGISTERED_USERS_KEY, JSON.stringify(users));
+}
+
+function requireAuth(message = '请先登录') {
+    if (currentUser) return true;
+    utils.showToast(message, 'warning');
+    window.authAPI.showLoginModal();
+    return false;
+}
+
+function isRouteAllowedWithoutAuth(href) {
+    const page = (href.split('/').pop() || '').toLowerCase();
+    return page === '' || page === 'index.html';
+}
+
+function initAccessGuards() {
+    const protectedAnchors = document.querySelectorAll('a[href]');
+    protectedAnchors.forEach(anchor => {
+        anchor.addEventListener('click', (e) => {
+            const href = anchor.getAttribute('href');
+            if (!href || href.startsWith('#') || href.startsWith('http')) return;
+            if (!isRouteAllowedWithoutAuth(href) && !currentUser) {
+                e.preventDefault();
+                requireAuth('请先登录后再访问该页面');
+            }
+        });
+    });
+}
