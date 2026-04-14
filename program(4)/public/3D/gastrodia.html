@@ -131,7 +131,7 @@
     const loader = new GLTFLoader();
     const modelPath = '/3D/models/gastrodia.glb';
 
-    loader.load(modelPath, (gltf) => {
+    loader.load(`${modelPath}?t=${Date.now()}`, (gltf) => {
       const model = gltf.scene;
       scene.add(model);
       
@@ -141,7 +141,8 @@
       // 自动对准模型
       const box = new THREE.Box3().setFromObject(model);
       const center = box.getCenter(new THREE.Vector3());
-      controls.target.copy(center);
+      model.position.sub(center);
+      controls.target.copy(new THREE.Vector3(0, 0, 0));
     }, 
     (xhr) => {
       if (xhr.total > 0) {
