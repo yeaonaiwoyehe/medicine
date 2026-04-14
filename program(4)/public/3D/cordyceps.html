@@ -129,7 +129,7 @@
 
     // --- 4. 加载模型 ---
     const loader = new GLTFLoader();
-    const modelPath = new URL('./models/cordyceps.glb', window.location.href).href;
+    const modelPath = '/3D/models/cordyceps.glb';
 
     loader.load(modelPath, (gltf) => {
       const model = gltf.scene;
