@@ -129,9 +129,9 @@
 
     // --- 4. 加载模型 ---
     const loader = new GLTFLoader();
-    const modelPath = '/3D/models/mortar_bowl.glb';
+    const modelPath = './models/mortar_bowl.glb';
 
-    loader.load(`${modelPath}?t=${Date.now()}`, (gltf) => {
+    loader.load(modelPath, (gltf) => {
       const model = gltf.scene;
       scene.add(model);
       
