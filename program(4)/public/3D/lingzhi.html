@@ -129,9 +129,9 @@
 
     // --- 4. 加载模型 ---
     const loader = new GLTFLoader();
-    const modelPath = '/3D/models/lingzhi.glb';
+    const modelPath = './models/lingzhi.glb';
 
-    loader.load(`${modelPath}?t=${Date.now()}`, (gltf) => {
+    loader.load(modelPath, (gltf) => {
       const model = gltf.scene;
       scene.add(model);
       
