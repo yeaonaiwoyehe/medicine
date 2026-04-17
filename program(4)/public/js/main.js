@@ -1441,6 +1441,7 @@ function initEncyclopediaSystem() {
         renderGrid();
     });
 
+
     favToggleBtn.addEventListener('click', () => {
         state.onlyFavorite = !state.onlyFavorite;
         renderGrid();
@@ -3082,10 +3083,7 @@ function initAuthSystem() {
     updateAuthButton();
 
     // 绑定认证按钮事件
-    const authButton = document.getElementById('auth-button');
-    if (authButton) {
-        authButton.addEventListener('click', toggleAuthModal);
-    }
+    bindAuthButtonHandler();
 
     // 绑定模态框事件
     const authModal = document.getElementById('auth-modal');
@@ -3128,15 +3126,21 @@ function initAuthSystem() {
 // 切换认证模态框显示状态
 function toggleAuthModal() {
     const authModal = document.getElementById('auth-modal');
+    if (currentUser) {
+        // 如果已登录，执行登出
+        handleLogout();
+        return;
+    }
+
     if (authModal) {
-        if (currentUser) {
-            // 如果已登录，显示用户菜单或执行登出
-            handleLogout();
-        } else {
-            // 如果未登录，显示登录模态框
-            authModal.classList.add('active');
-            document.body.style.overflow = 'hidden';
-            switchAuthForm('login');
+        // 如果未登录，显示登录模态框
+        authModal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        switchAuthForm('login');
+    } else {
+        // 某些页面没有登录模态框时的兜底提示
+        if (utils && typeof utils.showToast === 'function') {
+            utils.showToast('当前页面未加载登录弹窗，请返回首页登录', 'warning');
         }
     }
 }
@@ -3268,12 +3272,107 @@ function handleRegister(event) {
 
 // 处理登出
 function handleLogout() {
-    if (confirm('确定要退出登录吗？')) {
+    showLogoutConfirmDialog().then((confirmed) => {
+        if (!confirmed) return;
         currentUser = null;
         localStorage.removeItem(CURRENT_USER_KEY);
         updateAuthButton();
         utils.showToast('已退出登录', 'info');
-    }
+    });
+}
+
+function showLogoutConfirmDialog() {
+    return new Promise((resolve) => {
+        const existing = document.getElementById('logout-confirm-overlay');
+        if (existing) existing.remove();
+
+        const styleId = 'logout-confirm-style';
+        if (!document.getElementById(styleId)) {
+            const style = document.createElement('style');
+            style.id = styleId;
+            style.textContent = `
+                .logout-confirm-overlay {
+                    position: fixed;
+                    inset: 0;
+                    background: rgba(0, 0, 0, 0.25);
+                    z-index: 20000;
+                }
+                .logout-confirm-dialog {
+                    position: fixed;
+                    top: 62px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    width: min(340px, calc(100vw - 24px));
+                    background: rgba(24, 24, 24, 0.95);
+                    color: #fff;
+                    border-radius: 12px;
+                    box-shadow: 0 14px 38px rgba(0, 0, 0, 0.35);
+                    padding: 14px 14px 12px;
+                    z-index: 20001;
+                }
+                .logout-confirm-title {
+                    font-size: 14px;
+                    font-weight: 600;
+                    margin-bottom: 10px;
+                }
+                .logout-confirm-message {
+                    font-size: 13px;
+                    color: rgba(255, 255, 255, 0.85);
+                    margin-bottom: 12px;
+                }
+                .logout-confirm-actions {
+                    display: flex;
+                    justify-content: flex-end;
+                    gap: 8px;
+                }
+                .logout-confirm-btn {
+                    border: none;
+                    border-radius: 8px;
+                    padding: 6px 14px;
+                    font-size: 12px;
+                    cursor: pointer;
+                }
+                .logout-confirm-btn.cancel {
+                    background: rgba(255, 255, 255, 0.14);
+                    color: #fff;
+                }
+                .logout-confirm-btn.ok {
+                    background: #ffffff;
+                    color: #222;
+                    font-weight: 600;
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        const overlay = document.createElement('div');
+        overlay.id = 'logout-confirm-overlay';
+        overlay.className = 'logout-confirm-overlay';
+
+        const dialog = document.createElement('div');
+        dialog.className = 'logout-confirm-dialog';
+        dialog.innerHTML = `
+            <div class="logout-confirm-title">此页面显示</div>
+            <div class="logout-confirm-message">确定要退出登录吗？</div>
+            <div class="logout-confirm-actions">
+                <button type="button" class="logout-confirm-btn cancel">取消</button>
+                <button type="button" class="logout-confirm-btn ok">确定</button>
+            </div>
+        `;
+
+        const cleanup = (result) => {
+            overlay.remove();
+            dialog.remove();
+            resolve(result);
+        };
+
+        overlay.addEventListener('click', () => cleanup(false));
+        dialog.querySelector('.logout-confirm-btn.cancel').addEventListener('click', () => cleanup(false));
+        dialog.querySelector('.logout-confirm-btn.ok').addEventListener('click', () => cleanup(true));
+
+        document.body.appendChild(overlay);
+        document.body.appendChild(dialog);
+    });
 }
 
 // 更新认证按钮显示
@@ -3296,6 +3395,19 @@ function updateAuthButton() {
             <span class="auth-text">登录/注册</span>
         `;
     }
+
+    // 每次按钮内容更新后都重新绑定，避免退出后点击失效
+    bindAuthButtonHandler();
+}
+
+function bindAuthButtonHandler() {
+    const authButton = document.getElementById('auth-button');
+    if (!authButton) return;
+    authButton.onclick = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        toggleAuthModal();
+    };
 }
 
 // 认证系统API接口（供外部调用）

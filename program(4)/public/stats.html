@@ -10,7 +10,151 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="css/style.css">
+    <style>
+        .stats-dashboard-page {
+            padding: 120px 20px 40px;
+            background: linear-gradient(135deg, #e8f5e9 0%, #ffffff 50%, #e8f5e9 100%);
+            min-height: 100vh;
+            background-size: 200% 200%;
+            animation: dashboardGradientFlow 16s ease infinite;
+        }
+
+        .stats-dashboard-page .dashboard-header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .stats-dashboard-page .dashboard-header h1 {
+            font-size: 32px;
+            color: #2c3e50;
+            margin-bottom: 8px;
+            background: linear-gradient(90deg, #2c3e50, #2e7d32, #2c3e50);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: titleGlow 5s linear infinite;
+        }
+
+        .stats-dashboard-page .dashboard-header p {
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+
+        .stats-dashboard-page .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .stats-dashboard-page .chart-card {
+            background: #fff;
+            border-radius: 10px;
+            padding: 16px;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(56, 142, 60, 0.12);
+            transition: transform 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease;
+            animation: cardFloat 5s ease-in-out infinite;
+        }
+
+        .stats-dashboard-page .chart-card.enter-hidden {
+            opacity: 0;
+            transform: translateY(28px) scale(0.97);
+            filter: blur(2px);
+            animation: none;
+        }
+
+        .stats-dashboard-page .chart-card.enter-visible {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+            filter: blur(0);
+            transition: opacity 0.7s ease, transform 0.7s ease, filter 0.7s ease;
+            animation: cardFloat 5s ease-in-out infinite;
+        }
+
+        .stats-dashboard-page .chart-card.full {
+            grid-column: span 2;
+        }
+
+        .stats-dashboard-page .chart-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 14px 26px rgba(0, 0, 0, 0.12);
+            border-color: rgba(56, 142, 60, 0.3);
+        }
+
+        .stats-dashboard-page .chart-card.is-active {
+            border-color: rgba(46, 125, 50, 0.5);
+            box-shadow: 0 12px 30px rgba(76, 175, 80, 0.22);
+        }
+
+        .stats-dashboard-page .chart-card-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #ecf0f1;
+        }
+
+        .stats-dashboard-page .canvas-wrap {
+            position: relative;
+            height: 320px;
+            animation: chartAreaPulse 4s ease-in-out infinite;
+        }
+
+        .stats-dashboard-page .canvas-wrap.large {
+            height: 420px;
+        }
+
+        .stats-dashboard-page .dashboard-info {
+            text-align: center;
+            margin-top: 24px;
+            color: #7f8c8d;
+            font-size: 13px;
+        }
+
+        @keyframes dashboardGradientFlow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        @keyframes titleGlow {
+            0% { background-position: 0% center; }
+            100% { background-position: 200% center; }
+        }
+
+        @keyframes cardFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-3px); }
+        }
+
+        @keyframes chartAreaPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.96; }
+        }
+
+        .stats-dashboard-page .chart-card:nth-child(2) { animation-delay: 0.2s; }
+        .stats-dashboard-page .chart-card:nth-child(3) { animation-delay: 0.4s; }
+        .stats-dashboard-page .chart-card:nth-child(4) { animation-delay: 0.6s; }
+        .stats-dashboard-page .chart-card:nth-child(5) { animation-delay: 0.8s; }
+        .stats-dashboard-page .chart-card:nth-child(6) { animation-delay: 1s; }
+        .stats-dashboard-page .chart-card:nth-child(7) { animation-delay: 1.2s; }
+
+        @media (max-width: 992px) {
+            .stats-dashboard-page .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-dashboard-page .chart-card.full {
+                grid-column: span 1;
+            }
+        }
+    </style>
 </head>
 <body>
     <div id="particles-bg"></div>
@@ -62,6 +206,10 @@
                 <a href="stats.html" class="nav-link">
                     <i class="fas fa-chart-line"></i>
                     <span>数据统计</span>
+                </a>
+                <a href="profile.html" class="nav-link">
+                    <i class="fas fa-user-circle"></i>
+                    <span>个人中心</span>
                 </a>
             </div>
             
@@ -136,70 +284,67 @@
         </div>
     </div>
 
-    <section class="stats-section" id="stats">
-        <div class="section-header" data-aos="fade-up">
-            <div class="section-icon">
-                <i class="fas fa-chart-bar"></i>
-            </div>
-            <h2 class="section-title">数据统计</h2>
-            <p class="section-subtitle">多维度展示中医药文物数据分析</p>
+    <main class="stats-dashboard-page" id="stats">
+        <div class="dashboard-header" data-aos="fade-down" data-aos-duration="900">
+            <h1>中医医疗器具数据可视化</h1>
+            <p>多维度展示中医药文物数据分析</p>
         </div>
-        
-        <div class="stats-grid">
-            <div class="chart-card" data-aos="fade-up" data-aos-delay="100">
-                <div class="chart-header">
-                    <h4><i class="fas fa-clock"></i> 文物年代分布</h4>
-                </div>
-                <div class="chart-body">
-                    <div id="dynasty-chart" class="chart"></div>
-                </div>
-            </div>
-            
-            <div class="chart-card" data-aos="fade-up" data-aos-delay="200">
-                <div class="chart-header">
-                    <h4><i class="fas fa-tags"></i> 文物类型占比</h4>
-                </div>
-                <div class="chart-body">
-                    <div id="type-chart" class="chart"></div>
-                </div>
-            </div>
-            
-            <div class="chart-card" data-aos="fade-up" data-aos-delay="300">
-                <div class="chart-header">
-                    <h4><i class="fas fa-heartbeat"></i> 药材功效分析</h4>
-                </div>
-                <div class="chart-body">
-                    <div id="efficacy-chart" class="chart"></div>
-                </div>
-            </div>
-            
-            <div class="chart-card chart-wide" data-aos="fade-up" data-aos-delay="400">
-                <div class="chart-header">
-                    <h4><i class="fas fa-chart-line"></i> 系统识别趋势</h4>
-                    <div class="chart-tabs">
-                        <button class="tab-btn active" data-period="week">近一周</button>
-                        <button class="tab-btn" data-period="month">近一月</button>
-                        <button class="tab-btn" data-period="year">近一年</button>
-                    </div>
-                </div>
-                <div class="chart-body">
-                    <div id="trend-chart" class="chart"></div>
-                </div>
-            </div>
-        </div>
-    </section>
 
-    <section class="recommend-section" id="recommend">
-        <div class="section-header" data-aos="fade-up">
-            <div class="section-icon">
-                <i class="fas fa-lightbulb"></i>
+        <div class="dashboard-grid">
+            <div class="chart-card full enter-hidden">
+                <div class="chart-card-title">朝代文物数量时间轴</div>
+                <div class="canvas-wrap large">
+                    <canvas id="dynastyTimelineChart"></canvas>
+                </div>
             </div>
-            <h2 class="section-title">推荐探索</h2>
-            <p class="section-subtitle">基于您的浏览记录智能推荐</p>
+
+            <div class="chart-card enter-hidden">
+                <div class="chart-card-title">各朝代医疗器具数量统计</div>
+                <div class="canvas-wrap">
+                    <canvas id="dynastyBarChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-card enter-hidden">
+                <div class="chart-card-title">类型分布</div>
+                <div class="canvas-wrap">
+                    <canvas id="typePieChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-card enter-hidden">
+                <div class="chart-card-title">材料使用分布</div>
+                <div class="canvas-wrap">
+                    <canvas id="materialDoughnutChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-card enter-hidden">
+                <div class="chart-card-title">用途分类统计</div>
+                <div class="canvas-wrap">
+                    <canvas id="usageBarChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-card enter-hidden">
+                <div class="chart-card-title">朝代分布 TOP10</div>
+                <div class="canvas-wrap">
+                    <canvas id="topDynastyChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-card enter-hidden">
+                <div class="chart-card-title">材料使用频次统计</div>
+                <div class="canvas-wrap">
+                    <canvas id="materialBarChart"></canvas>
+                </div>
+            </div>
         </div>
-        
-        <div class="recommend-grid" id="recommend-grid" data-aos="fade-up" data-aos-delay="200"></div>
-    </section>
+
+        <div class="dashboard-info">
+            数据更新时间：<span id="updateTime"></span>
+        </div>
+    </main>
 
     <footer class="footer">
         <div class="footer-wave">
@@ -264,7 +409,7 @@
             </div>
             
             <div class="footer-bottom">
-                <p>&copy; 2024 器药同溯 - 中医药文物认知系统 | 基于深度学习与知识图谱技术</p>
+                <p>&copy; 2026 器药同溯 - 中医药文物认知系统 | 基于深度学习与知识图谱技术</p>
                 <p class="tech-stack">
                     <span><i class="fas fa-brain"></i> AI Powered</span>
                     <span><i class="fas fa-project-diagram"></i> Knowledge Graph</span>
@@ -319,6 +464,172 @@
             </div>
         </div>
     </div>
+
+    <script>
+        (function renderDashboard() {
+            const dynastyCount = {
+                "先秦": 3, "西汉": 11, "东汉": 7, "魏晋": 2, "南北朝": 2,
+                "唐代": 8, "宋代": 3, "元代": 1, "明代": 13, "清代": 26,
+                "民国": 10, "近现代": 25, "现代": 4
+            };
+            const typeCount = {
+                "针灸经络": 16, "诊疗器具": 5, "制药器具": 33, "药材标本": 15, "养生保健": 6, "医药文献": 49
+            };
+            const materialCount = {
+                "铜质": 24, "瓷质": 14, "木质": 12, "纸本": 28, "帛本": 6, "陶质": 9,
+                "金属": 8, "石质": 3, "银质": 2, "绢本": 4
+            };
+            const usageCategories = {
+                "针灸治疗": 18, "诊断器具": 9, "经络演示": 4, "制药器具": 33,
+                "医药文献": 49, "药材标本": 15, "养生保健": 6
+            };
+
+            const total = Object.values(typeCount).reduce((sum, value) => sum + value, 0);
+            const colors = [
+                "#d4a574", "#a67c52", "#8b6f47", "#667eea", "#764ba2",
+                "#11998e", "#38ef7d", "#f093fb", "#f5576c", "#4facfe",
+                "#00f2fe", "#f39c12", "#e74c3c"
+            ];
+
+            const percentLabel = (name, value) => `${name} (${(value / total * 100).toFixed(1)}%)`;
+
+            const timelineKeys = Object.keys(dynastyCount);
+            const chartAnimation = {
+                animation: {
+                    duration: 1600,
+                    easing: "easeOutCubic"
+                }
+            };
+
+            new Chart(document.getElementById("dynastyTimelineChart"), {
+                type: "line",
+                data: {
+                    labels: timelineKeys,
+                    datasets: [{
+                        label: "文物数量",
+                        data: timelineKeys.map((key) => dynastyCount[key]),
+                        backgroundColor: "rgba(102, 126, 234, 0.2)",
+                        borderColor: "#667eea",
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 5
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, ...chartAnimation }
+            });
+
+            const dynastySorted = Object.entries(dynastyCount).sort((a, b) => b[1] - a[1]);
+            new Chart(document.getElementById("dynastyBarChart"), {
+                type: "bar",
+                data: {
+                    labels: dynastySorted.map(([k, v]) => percentLabel(k, v)),
+                    datasets: [{
+                        data: dynastySorted.map(([, v]) => v),
+                        backgroundColor: colors.map((c) => `${c}99`),
+                        borderColor: colors,
+                        borderWidth: 2
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, ...chartAnimation }
+            });
+
+            const typeSorted = Object.entries(typeCount).sort((a, b) => b[1] - a[1]);
+            new Chart(document.getElementById("typePieChart"), {
+                type: "pie",
+                data: {
+                    labels: typeSorted.map(([k, v]) => percentLabel(k, v)),
+                    datasets: [{ data: typeSorted.map(([, v]) => v), backgroundColor: colors }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, ...chartAnimation }
+            });
+
+            const materialSorted = Object.entries(materialCount).sort((a, b) => b[1] - a[1]);
+            new Chart(document.getElementById("materialDoughnutChart"), {
+                type: "doughnut",
+                data: {
+                    labels: materialSorted.map(([k, v]) => percentLabel(k, v)),
+                    datasets: [{ data: materialSorted.map(([, v]) => v), backgroundColor: colors }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, cutout: "50%", ...chartAnimation }
+            });
+
+            const usageKeys = Object.keys(usageCategories);
+            new Chart(document.getElementById("usageBarChart"), {
+                type: "bar",
+                data: {
+                    labels: usageKeys.map((k) => percentLabel(k, usageCategories[k])),
+                    datasets: [{
+                        data: usageKeys.map((k) => usageCategories[k]),
+                        backgroundColor: colors.map((c) => `${c}99`),
+                        borderColor: colors,
+                        borderWidth: 2
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, ...chartAnimation }
+            });
+
+            const top10 = dynastySorted.slice(0, 10);
+            new Chart(document.getElementById("topDynastyChart"), {
+                type: "bar",
+                data: {
+                    labels: top10.map(([k, v]) => percentLabel(k, v)),
+                    datasets: [{
+                        data: top10.map(([, v]) => v),
+                        backgroundColor: colors.map((c) => `${c}99`),
+                        borderColor: colors,
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    indexAxis: "y",
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    ...chartAnimation
+                }
+            });
+
+            new Chart(document.getElementById("materialBarChart"), {
+                type: "bar",
+                data: {
+                    labels: materialSorted.map(([k, v]) => percentLabel(k, v)),
+                    datasets: [{
+                        data: materialSorted.map(([, v]) => v),
+                        backgroundColor: colors.map((c) => `${c}99`),
+                        borderColor: colors,
+                        borderWidth: 2
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, ...chartAnimation }
+            });
+
+            const updateTimeEl = document.getElementById("updateTime");
+            const refreshTime = () => {
+                updateTimeEl.textContent = new Date().toLocaleString("zh-CN");
+            };
+            refreshTime();
+            setInterval(refreshTime, 1000);
+
+            const cards = Array.from(document.querySelectorAll(".dashboard-grid .chart-card"));
+            const revealCardsInSequence = () => {
+                cards.forEach((card, index) => {
+                    setTimeout(() => {
+                        card.classList.remove("enter-hidden");
+                        card.classList.add("enter-visible");
+                    }, 250 + index * 170);
+                });
+            };
+            revealCardsInSequence();
+
+            let activeCardIndex = 0;
+            setInterval(() => {
+                cards.forEach((card) => card.classList.remove("is-active"));
+                cards[activeCardIndex].classList.add("is-active");
+                activeCardIndex = (activeCardIndex + 1) % cards.length;
+            }, 2200);
+        })();
+    </script>
 
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
