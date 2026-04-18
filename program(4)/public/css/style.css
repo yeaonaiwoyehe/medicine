@@ -235,13 +235,13 @@ body {
 }
 
 .navbar.scrolled {
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(20px);
+    background: #ffffff;
     box-shadow: var(--shadow);
+    /* 覆盖下方内容时必须不透明白底，避免文字/图案透出 */
 }
 
 .dark .navbar.scrolled {
-    background: rgba(13, 26, 16, 0.95);
+    background: #0d1a10;
 }
 
 .navbar-container {

@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>器药同溯 - 中医药文物认知系统</title>
+    <meta name="description" content="识器物 · 知本草 · 溯方剂 - 基于AI的中医药文物智能识别与知识图谱系统">
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- AOS Animation Library -->
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    
+    <!-- Swiper CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/style.css">
+
+</head>
+<body>
+    <!-- 粒子背景 -->
+    <div id="particles-bg"></div>
+    
+    <!-- 加载动画 -->
+    <div id="loading-screen">
+        <div class="loading-content">
+            <div class="loading-logo">
+                <div class="yin-yang">
+                    <div class="yin-yang-inner"></div>
+                </div>
+            </div>
+            <h2 class="loading-title">器药同溯</h2>
+            <p class="loading-subtitle">中医药文物认知系统加载中...</p>
+            <div class="loading-bar">
+                <div class="loading-progress"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 导航栏 -->
+    <nav class="navbar" id="navbar">
+        <div class="navbar-container">
+            <div class="navbar-brand">
+                <div class="brand-icon">
+                    <i class="fas fa-leaf"></i>
+                </div>
+                <div class="brand-text">
+                    <span class="brand-title">器药同溯</span>
+                    <span class="brand-subtitle">中医药文物认知系统</span>
+                </div>
+            </div>
+            
+            <div class="navbar-menu" id="navbar-menu">
+                <a href="index.html" class="nav-link">
+                    <i class="fas fa-home"></i>
+                    <span>首页</span>
+                </a>
+                <a href="artifacts.html" class="nav-link">
+                    <i class="fas fa-landmark"></i>
+                    <span>文物库</span>
+                </a>
+                <a href="upload.html" class="nav-link">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <span>智能识别</span>
+                </a>
+                <a href="knowledge.html" class="nav-link">
+                    <i class="fas fa-project-diagram"></i>
+                    <span>知识图谱</span>
+                </a>
+                <a href="stats.html" class="nav-link">
+                    <i class="fas fa-chart-line"></i>
+                    <span>数据统计</span>
+                </a>
+                <a href="profile.html" class="nav-link">
+                    <i class="fas fa-user-circle"></i>
+                    <span>个人中心</span>
+                </a>
+            </div>
+            
+            <div class="navbar-actions">
+                <button class="auth-button" id="auth-button" aria-label="登录/注册">
+                    <i class="fas fa-user"></i>
+                    <span class="auth-text">登录/注册</span>
+                    <img src="placeholder-user.jpg" alt="用户头像" class="user-avatar" style="display: none;">
+                </button>
+                <button class="theme-toggle" id="theme-toggle" aria-label="切换主题">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <button class="mobile-toggle" id="mobile-toggle" aria-label="菜单">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 登录模态框 -->
+    <div class="auth-modal" id="auth-modal">
+        <div class="auth-modal-backdrop" id="auth-modal-backdrop"></div>
+        <div class="auth-modal-content">
+            <div class="auth-modal-header">
+                <h3 class="auth-modal-title">登录/注册</h3>
+                <button class="auth-modal-close" id="auth-modal-close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="auth-modal-body">
+                <!-- 登录表单 -->
+                <form class="auth-form" id="login-form">
+                    <div class="form-group">
+                        <label for="login-email">邮箱</label>
+                        <input type="email" id="login-email" name="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password">密码</label>
+                        <input type="password" id="login-password" name="password" required>
+                    </div>
+                    <button type="submit" class="auth-submit-btn">登录</button>
+                    <div class="auth-switch">
+                        <span>还没有账号？</span>
+                        <button type="button" class="auth-switch-btn" id="switch-to-register">立即注册</button>
+                    </div>
+                </form>
+
+                <!-- 注册表单 -->
+                <form class="auth-form" id="register-form" style="display: none;">
+                    <div class="form-group">
+                        <label for="register-username">用户名</label>
+                        <input type="text" id="register-username" name="username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="register-email">邮箱</label>
+                        <input type="email" id="register-email" name="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="register-password">密码</label>
+                        <input type="password" id="register-password" name="password" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="register-confirm-password">确认密码</label>
+                        <input type="password" id="register-confirm-password" name="confirmPassword" required>
+                    </div>
+                    <button type="submit" class="auth-submit-btn">注册</button>
+                    <div class="auth-switch">
+                        <span>已有账号？</span>
+                        <button type="button" class="auth-switch-btn" id="switch-to-login">立即登录</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主页英雄区 -->
+    <section class="hero" id="hero">
+        <div class="hero-bg">
+            <div class="hero-pattern"></div>
+            <div class="floating-herbs">
+                <div class="herb herb-1"><i class="fas fa-leaf"></i></div>
+                <div class="herb herb-2"><i class="fas fa-seedling"></i></div>
+                <div class="herb herb-3"><i class="fas fa-spa"></i></div>
+                <div class="herb herb-4"><i class="fas fa-leaf"></i></div>
+                <div class="herb herb-5"><i class="fas fa-cannabis"></i></div>
+            </div>
+        </div>
+        
+        <div class="hero-container">
+            <div class="hero-content">
+                <div class="hero-badge" data-aos="fade-down" data-aos-delay="200">
+                    <i class="fas fa-award"></i>
+                    <span>AI驱动 · 智能识别</span>
+                </div>
+                
+                <h1 class="hero-title" data-aos="fade-right" data-aos-delay="400">
+                    <span class="title-line">器药同溯</span>
+                    <span class="title-divider">
+                        <span class="divider-line"></span>
+                        <i class="fas fa-yin-yang"></i>
+                        <span class="divider-line"></span>
+                    </span>
+                    <span class="title-subtitle">中医药文物认知系统</span>
+                </h1>
+                
+                <p class="hero-description" data-aos="fade-right" data-aos-delay="600">
+                    识器物 · 知本草 · 溯方剂
+                </p>
+                
+                <p class="hero-intro" data-aos="fade-right" data-aos-delay="700">
+                    基于深度学习的中医药文物智能识别平台，结合知识图谱技术，<br>
+                    实现文物鉴定、药材识别、方剂溯源的一体化认知服务
+                </p>
+                
+                <div class="hero-stats" data-aos="fade-right" data-aos-delay="800">
+                    <div class="stat-item">
+                        <div class="stat-icon">
+                            <i class="fas fa-landmark"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-number" data-target="12847">0</span>
+                            <span class="stat-label">文物数据</span>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-icon">
+                            <i class="fas fa-leaf"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-number" data-target="5623">0</span>
+                            <span class="stat-label">中药材种</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="hero-actions" data-aos="fade-up" data-aos-delay="900">
+                    <a href="upload.html" class="btn btn-primary btn-glow">
+                        <i class="fas fa-magic"></i>
+                        <span>开始识别</span>
+                        <div class="btn-shine"></div>
+                    </a>
+                    <a href="artifacts.html" class="btn btn-secondary">
+                        <i class="fas fa-compass"></i>
+                        <span>探索文物库</span>
+                    </a>
+                </div>
+            </div>
+
+            <div class="hero-visual" data-aos="fade-left" data-aos-delay="500">
+                <div class="dynamic-content-wrapper" id="hero-dynamic-content">
+                    <!-- JS will populate this -->
+                </div>
+                
+                <div class="hero-thumbnails-container">
+                    <div class="hero-thumbnails-arc" id="hero-thumbnails-arc">
+                        <!-- JS will populate thumbnails -->
+                    </div>
+                </div>
+
+                <div class="visual-ornaments">
+                    <div class="circle-ornament ornament-1"></div>
+                    <div class="circle-ornament ornament-2"></div>
+                    <div class="circle-ornament ornament-3"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="scroll-indicator">
+            <div class="mouse">
+                <div class="wheel"></div>
+            </div>
+            <span>向下滚动探索</span>
+        </div>
+    </section>
+
+    <!-- 页面已拆分：文物库 / 智能识别 / 知识图谱 / 数据统计 迁移到独立页面 -->
+
+    <!-- 相关推荐 -->
+    <section class="recommend-section" id="recommend">
+        <div class="section-header" data-aos="fade-up">
+            <div class="section-icon">
+                <i class="fas fa-lightbulb"></i>
+            </div>
+            <h2 class="section-title">推荐探索</h2>
+            <p class="section-subtitle">基于您的浏览记录智能推荐</p>
+        </div>
+        
+        <div class="recommend-grid" id="recommend-grid" data-aos="fade-up" data-aos-delay="200">
+            <!-- 推荐卡片通过JS动态生成 -->
+        </div>
+    </section>
+
+    <!-- 页脚 -->
+    <footer class="footer">
+        <div class="footer-wave">
+            <svg viewBox="0 0 1440 120" preserveAspectRatio="none">
+                <path d="M0,64L48,69.3C96,75,192,85,288,80C384,75,480,53,576,48C672,43,768,53,864,64C960,75,1056,85,1152,80C1248,75,1344,53,1392,42.7L1440,32L1440,120L1392,120C1344,120,1248,120,1152,120C1056,120,960,120,864,120C768,120,672,120,576,120C480,120,384,120,288,120C192,120,96,120,48,120L0,120Z"></path>
+            </svg>
+        </div>
+        
+        <div class="footer-content">
+            <div class="footer-main">
+                <div class="footer-brand">
+                    <div class="brand-logo">
+                        <i class="fas fa-leaf"></i>
+                    </div>
+                    <h3>器药同溯</h3>
+                    <p>中医药文物认知系统</p>
+                    <p class="brand-slogan">传承千年智慧，科技赋能未来</p>
+                </div>
+                
+                <div class="footer-links">
+                    <div class="link-group">
+                        <h4>快速导航</h4>
+                        <a href="index.html">首页</a>
+                        <a href="artifacts.html">文物库</a>
+                        <a href="upload.html">智能识别</a>
+                        <a href="knowledge.html">知识图谱</a>
+                        <a href="stats.html">数据统计</a>
+                    </div>
+                    <div class="link-group">
+                        <h4>关于系统</h4>
+                        <a href="#">系统介绍</a>
+                        <a href="#">技术架构</a>
+                        <a href="#">数据来源</a>
+                        <a href="#">更新日志</a>
+                    </div>
+                    <div class="link-group">
+                        <h4>联系我们</h4>
+                        <a href="#">合作咨询</a>
+                        <a href="#">技术支持</a>
+                        <a href="#">意见反馈</a>
+                        <a href="#">加入我们</a>
+                    </div>
+                </div>
+                
+                <div class="footer-contact">
+                    <h4>技术支持</h4>
+                    <div class="contact-item">
+                        <i class="fas fa-envelope"></i>
+                        <span>tcm-ai@example.edu.cn</span>
+                    </div>
+                    <div class="contact-item">
+                        <i class="fas fa-phone"></i>
+                        <span>400-888-9999</span>
+                    </div>
+                    <div class="social-links">
+                        <a href="#" class="social-link"><i class="fab fa-weixin"></i></a>
+                        <a href="#" class="social-link"><i class="fab fa-weibo"></i></a>
+                        <a href="#" class="social-link"><i class="fab fa-github"></i></a>
+                        <a href="#" class="social-link"><i class="fas fa-globe"></i></a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2026 器药同溯 - 中医药文物认知系统 | 基于深度学习与知识图谱技术</p>
+                <p class="tech-stack">
+                    <span><i class="fas fa-brain"></i> AI Powered</span>
+                    <span><i class="fas fa-project-diagram"></i> Knowledge Graph</span>
+                    <span><i class="fas fa-database"></i> Big Data</span>
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- 返回顶部按钮 -->
+    <button class="back-to-top" id="back-to-top">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+
+    <!-- Toast 通知 -->
+    <div id="toast-container"></div>
+
+    <!-- 图片查看器 Modal -->
+    <div class="image-viewer-modal" id="image-viewer-modal">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <button class="modal-close"><i class="fas fa-times"></i></button>
+            <img id="modal-image" src="" alt="放大查看">
+        </div>
+    </div>
+
+    <!-- 文物详情弹窗 -->
+    <div class="artifact-detail-modal" id="artifact-detail-modal">
+        <div class="modal-overlay"></div>
+        <div class="modal-container">
+            <button class="modal-close" id="artifact-detail-close">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="modal-body">
+                <div class="artifact-detail-grid">
+                    <div class="artifact-detail-image">
+                        <img id="detail-image" src="" alt="文物图片">
+                        <span class="detail-badge" id="detail-dynasty-badge"></span>
+                    </div>
+                    <div class="artifact-detail-content">
+                        <div class="detail-header">
+                            <h2 id="detail-name" class="detail-title"></h2>
+                            <div class="detail-tags">
+                                <span class="detail-tag"><i class="fas fa-clock"></i> <span id="detail-dynasty"></span></span>
+                                <span class="detail-tag"><i class="fas fa-tags"></i> <span id="detail-type"></span></span>
+                                <span class="detail-tag"><i class="fas fa-cube"></i> <span id="detail-material"></span></span>
+                            </div>
+                        </div>
+                        <div class="detail-section">
+                            <h4><i class="fas fa-info-circle"></i> 文物详情介绍</h4>
+                            <p id="detail-description" class="detail-text"></p>
+                        </div>
+                        <div class="detail-section">
+                            <h4><i class="fas fa-project-diagram"></i> 知识图谱概览</h4>
+                            <div class="detail-mini-graph" id="detail-mini-graph"></div>
+                        </div>
+                        <div class="detail-actions">
+                            <button class="btn btn-primary" onclick="utils.scrollToSection('upload')">
+                                <i class="fas fa-magic"></i> 相似识别
+                            </button>
+                            <button class="btn btn-secondary" id="artifact-detail-close-btn">
+                                关闭
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 通用内容详情弹窗 -->
+    <div class="content-detail-modal" id="content-detail-modal">
+        <div class="modal-overlay"></div>
+        <div class="modal-container">
+            <button class="modal-close" id="content-detail-close">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="modal-body">
+                <div class="content-detail-layout">
+                    <div class="content-detail-header">
+                        <span class="content-type-badge" id="content-detail-type"></span>
+                        <h2 class="content-title" id="content-detail-title"></h2>
+                    </div>
+                    <div class="content-detail-main">
+                        <div class="content-image-wrapper">
+                            <img id="content-detail-image" src="" alt="内容图片">
+                        </div>
+                        <div class="content-text-wrapper">
+                            <div class="content-section">
+                                <h4><i class="fas fa-book-open"></i> 详细介绍</h4>
+                                <p id="content-detail-desc" class="content-desc-text"></p>
+                            </div>
+                            <div class="content-section" id="content-extra-section">
+                                <!-- 动态插入额外信息 -->
+                            </div>
+                        </div>
+                    </div>
+                    <div class="content-footer">
+                        <button class="btn btn-secondary" id="content-detail-close-btn">关闭</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
+    
+    <script src="js/data.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/charts.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>

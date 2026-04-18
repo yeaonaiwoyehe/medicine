@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>器药同溯 - 个人中心</title>
+    <meta name="description" content="个人资料、识别记录与收藏管理中心">
+
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .profile-page {
+            padding: 120px 20px 40px;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #f4fbf5 0%, #ffffff 50%, #eef7ff 100%);
+        }
+
+        .profile-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 20px;
+        }
+
+        .profile-panel, .profile-section {
+            background: #fff;
+            border-radius: 14px;
+            border: 1px solid rgba(46, 125, 50, 0.15);
+            box-shadow: 0 6px 24px rgba(44, 62, 80, 0.08);
+        }
+
+        .profile-panel {
+            padding: 24px;
+            text-align: center;
+            position: sticky;
+            top: 108px;
+            height: fit-content;
+        }
+
+        .profile-avatar {
+            width: 88px;
+            height: 88px;
+            border-radius: 50%;
+            margin: 0 auto 14px;
+            background: linear-gradient(135deg, #2e7d32, #43a047);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 34px;
+        }
+
+        .profile-name {
+            font-size: 22px;
+            color: #2c3e50;
+            margin-bottom: 6px;
+        }
+
+        .profile-role {
+            color: #6b7f75;
+            font-size: 13px;
+            margin-bottom: 18px;
+        }
+
+        .profile-meta {
+            text-align: left;
+            border-top: 1px solid #edf2f4;
+            padding-top: 14px;
+            margin-top: 12px;
+        }
+
+        .profile-meta-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            font-size: 14px;
+            color: #4f5d75;
+        }
+
+        .profile-actions {
+            margin-top: 18px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .profile-btn {
+            flex: 1;
+            border: none;
+            border-radius: 10px;
+            padding: 10px 12px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all .25s ease;
+        }
+
+        .profile-btn.primary {
+            background: linear-gradient(135deg, #2e7d32, #43a047);
+            color: #fff;
+        }
+
+        .profile-btn.secondary {
+            background: #f1f6f2;
+            color: #2e7d32;
+        }
+
+        .profile-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .profile-main {
+            display: grid;
+            gap: 20px;
+        }
+
+        .profile-section {
+            padding: 20px;
+        }
+
+        .section-title {
+            margin-bottom: 14px;
+            color: #2c3e50;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .stats-cards {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .stats-card {
+            border-radius: 12px;
+            padding: 14px;
+            background: linear-gradient(135deg, #f8fffa, #eff8f1);
+            border: 1px solid #e2f0e4;
+        }
+
+        .stats-label {
+            font-size: 12px;
+            color: #6a7a6d;
+        }
+
+        .stats-value {
+            margin-top: 8px;
+            color: #1f2f2a;
+            font-size: 22px;
+            font-weight: 700;
+        }
+
+        .activity-list, .favorites-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .activity-item, .favorites-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 12px 0;
+            border-bottom: 1px dashed #edf2f4;
+        }
+
+        .activity-item:last-child, .favorites-item:last-child {
+            border-bottom: none;
+        }
+
+        .item-main {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .item-icon {
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            background: #eef6ef;
+            color: #2e7d32;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .item-text h4 {
+            font-size: 14px;
+            margin: 0;
+            color: #2c3e50;
+        }
+
+        .item-text p {
+            margin: 4px 0 0;
+            font-size: 12px;
+            color: #7b8b81;
+        }
+
+        .item-time {
+            font-size: 12px;
+            color: #95a5a6;
+            white-space: nowrap;
+        }
+
+        @media (max-width: 1024px) {
+            .profile-container {
+                grid-template-columns: 1fr;
+            }
+
+            .profile-panel {
+                position: static;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .stats-cards {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="particles-bg"></div>
+
+    <nav class="navbar" id="navbar">
+        <div class="navbar-container">
+            <div class="navbar-brand">
+                <div class="brand-icon">
+                    <i class="fas fa-leaf"></i>
+                </div>
+                <div class="brand-text">
+                    <span class="brand-title">器药同溯</span>
+                    <span class="brand-subtitle">中医药文物认知系统</span>
+                </div>
+            </div>
+
+            <div class="navbar-menu" id="navbar-menu">
+                <a href="index.html" class="nav-link"><i class="fas fa-home"></i><span>首页</span></a>
+                <a href="artifacts.html" class="nav-link"><i class="fas fa-landmark"></i><span>文物库</span></a>
+                <a href="upload.html" class="nav-link"><i class="fas fa-cloud-upload-alt"></i><span>智能识别</span></a>
+                <a href="knowledge.html" class="nav-link"><i class="fas fa-project-diagram"></i><span>知识图谱</span></a>
+                <a href="stats.html" class="nav-link"><i class="fas fa-chart-line"></i><span>数据统计</span></a>
+                <a href="profile.html" class="nav-link"><i class="fas fa-user-circle"></i><span>个人中心</span></a>
+            </div>
+
+            <div class="navbar-actions">
+                <button class="auth-button" id="auth-button" aria-label="登录/注册">
+                    <i class="fas fa-user"></i>
+                    <span class="auth-text">登录/注册</span>
+                    <img src="placeholder-user.jpg" alt="用户头像" class="user-avatar" style="display: none;">
+                </button>
+                <button class="theme-toggle" id="theme-toggle" aria-label="切换主题">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <button class="mobile-toggle" id="mobile-toggle" aria-label="菜单">
+                    <span></span><span></span><span></span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="auth-modal" id="auth-modal">
+        <div class="auth-modal-backdrop" id="auth-modal-backdrop"></div>
+        <div class="auth-modal-content">
+            <div class="auth-modal-header">
+                <h3 class="auth-modal-title">登录/注册</h3>
+                <button class="auth-modal-close" id="auth-modal-close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="auth-modal-body">
+                <form class="auth-form" id="login-form">
+                    <div class="form-group">
+                        <label for="login-email">邮箱</label>
+                        <input type="email" id="login-email" name="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password">密码</label>
+                        <input type="password" id="login-password" name="password" required>
+                    </div>
+                    <button type="submit" class="auth-submit-btn">登录</button>
+                    <div class="auth-switch">
+                        <span>还没有账号？</span>
+                        <button type="button" class="auth-switch-btn" id="switch-to-register">立即注册</button>
+                    </div>
+                </form>
+
+                <form class="auth-form" id="register-form" style="display: none;">
+                    <div class="form-group">
+                        <label for="register-username">用户名</label>
+                        <input type="text" id="register-username" name="username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="register-email">邮箱</label>
+                        <input type="email" id="register-email" name="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="register-password">密码</label>
+                        <input type="password" id="register-password" name="password" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="register-confirm-password">确认密码</label>
+                        <input type="password" id="register-confirm-password" name="confirmPassword" required>
+                    </div>
+                    <button type="submit" class="auth-submit-btn">注册</button>
+                    <div class="auth-switch">
+                        <span>已有账号？</span>
+                        <button type="button" class="auth-switch-btn" id="switch-to-login">立即登录</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <main class="profile-page">
+        <div class="profile-container">
+            <aside class="profile-panel" data-aos="fade-right">
+                <div class="profile-avatar"><i class="fas fa-user"></i></div>
+                <h1 class="profile-name">中医文物研究员</h1>
+                <p class="profile-role">认证用户 · 文化遗产方向</p>
+
+                <div class="profile-meta">
+                    <div class="profile-meta-item"><span>账号ID</span><strong>TCM-1024</strong></div>
+                    <div class="profile-meta-item"><span>加入时间</span><strong>2025-11-08</strong></div>
+                    <div class="profile-meta-item"><span>最后登录</span><strong id="lastLoginTime">--</strong></div>
+                    <div class="profile-meta-item"><span>偏好主题</span><strong>中草药器具</strong></div>
+                </div>
+
+                <div class="profile-actions">
+                    <button class="profile-btn primary">编辑资料</button>
+                    <button class="profile-btn secondary">账号设置</button>
+                    <button class="profile-btn secondary" id="profile-logout-btn">退出登录</button>
+                </div>
+            </aside>
+
+            <section class="profile-main">
+                <div class="profile-section" data-aos="fade-up">
+                    <h2 class="section-title"><i class="fas fa-chart-pie"></i> 数据概览</h2>
+                    <div class="stats-cards">
+                        <div class="stats-card">
+                            <div class="stats-label">累计识别次数</div>
+                            <div class="stats-value" data-target="326">0</div>
+                        </div>
+                        <div class="stats-card">
+                            <div class="stats-label">收藏文物数</div>
+                            <div class="stats-value" data-target="87">0</div>
+                        </div>
+                        <div class="stats-card">
+                            <div class="stats-label">知识图谱检索</div>
+                            <div class="stats-value" data-target="214">0</div>
+                        </div>
+                        <div class="stats-card">
+                            <div class="stats-label">连续活跃天数</div>
+                            <div class="stats-value" data-target="19">0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="profile-section" data-aos="fade-up" data-aos-delay="100">
+                    <h2 class="section-title"><i class="fas fa-history"></i> 最近活动</h2>
+                    <ul class="activity-list">
+                        <li class="activity-item">
+                            <div class="item-main">
+                                <div class="item-icon"><i class="fas fa-camera"></i></div>
+                                <div class="item-text">
+                                    <h4>识别了文物“青花乳钵”</h4>
+                                    <p>模型置信度 96.4%</p>
+                                </div>
+                            </div>
+                            <span class="item-time">2分钟前</span>
+                        </li>
+                        <li class="activity-item">
+                            <div class="item-main">
+                                <div class="item-icon"><i class="fas fa-project-diagram"></i></div>
+                                <div class="item-text">
+                                    <h4>查看知识图谱“人参-药臼关系链”</h4>
+                                    <p>访问 11 个关联节点</p>
+                                </div>
+                            </div>
+                            <span class="item-time">18分钟前</span>
+                        </li>
+                        <li class="activity-item">
+                            <div class="item-main">
+                                <div class="item-icon"><i class="fas fa-bookmark"></i></div>
+                                <div class="item-text">
+                                    <h4>收藏文物“汉代铜煎药釜”</h4>
+                                    <p>已加入“制药器具”分组</p>
+                                </div>
+                            </div>
+                            <span class="item-time">今天 10:26</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="profile-section" data-aos="fade-up" data-aos-delay="200">
+                    <h2 class="section-title"><i class="fas fa-star"></i> 我的收藏</h2>
+                    <ul class="favorites-list">
+                        <li class="favorites-item">
+                            <div class="item-main">
+                                <div class="item-icon"><i class="fas fa-mortar-pestle"></i></div>
+                                <div class="item-text">
+                                    <h4>清代青花乳钵</h4>
+                                    <p>制药器具 · 瓷质</p>
+                                </div>
+                            </div>
+                            <span class="item-time">收藏于 04-16</span>
+                        </li>
+                        <li class="favorites-item">
+                            <div class="item-main">
+                                <div class="item-icon"><i class="fas fa-scroll"></i></div>
+                                <div class="item-text">
+                                    <h4>《黄帝内经》古籍</h4>
+                                    <p>医药文献 · 纸本</p>
+                                </div>
+                            </div>
+                            <span class="item-time">收藏于 04-14</span>
+                        </li>
+                        <li class="favorites-item">
+                            <div class="item-main">
+                                <div class="item-icon"><i class="fas fa-seedling"></i></div>
+                                <div class="item-text">
+                                    <h4>根类药材标本（人参）</h4>
+                                    <p>药材标本 · 植物根</p>
+                                </div>
+                            </div>
+                            <span class="item-time">收藏于 04-10</span>
+                        </li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-wave">
+            <svg viewBox="0 0 1440 120" preserveAspectRatio="none">
+                <path d="M0,64L48,69.3C96,75,192,85,288,80C384,75,480,53,576,48C672,43,768,53,864,64C960,75,1056,85,1152,80C1248,75,1344,53,1392,42.7L1440,32L1440,120L1392,120C1344,120,1248,120,1152,120C1056,120,960,120,864,120C768,120,672,120,576,120C480,120,384,120,288,120C192,120,96,120,48,120L0,120Z"></path>
+            </svg>
+        </div>
+
+        <div class="footer-content">
+            <div class="footer-main">
+                <div class="footer-brand">
+                    <div class="brand-logo"><i class="fas fa-leaf"></i></div>
+                    <h3>器药同溯</h3>
+                    <p>中医药文物认知系统</p>
+                    <p class="brand-slogan">传承千年智慧，科技赋能未来</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 器药同溯 - 中医药文物认知系统 | 基于深度学习与知识图谱技术</p>
+            </div>
+        </div>
+    </footer>
+
+    <button class="back-to-top" id="back-to-top">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
+
+    <script src="js/data.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/charts.js"></script>
+    <script src="js/main.js"></script>
+    <script>
+        (function initProfilePage() {
+            const loginEl = document.getElementById("lastLoginTime");
+            if (loginEl) loginEl.textContent = new Date().toLocaleString("zh-CN");
+
+            const counters = document.querySelectorAll("[data-target]");
+            counters.forEach((counter) => {
+                const target = Number(counter.getAttribute("data-target")) || 0;
+                let value = 0;
+                const step = Math.max(1, Math.floor(target / 40));
+                const timer = setInterval(() => {
+                    value += step;
+                    if (value >= target) {
+                        value = target;
+                        clearInterval(timer);
+                    }
+                    counter.textContent = String(value);
+                }, 25);
+            });
+
+            const logoutBtn = document.getElementById("profile-logout-btn");
+            if (logoutBtn) {
+                logoutBtn.addEventListener("click", () => {
+                    const topAuthBtn = document.getElementById("auth-button");
+                    if (topAuthBtn) {
+                        // 与站内其他页面保持一致：复用统一退出流程
+                        topAuthBtn.click();
+                    }
+                });
+            }
+        })();
+    </script>
+</body>
+</html>

@@ -41,22 +41,32 @@ async function initializeApp() {
     // 加载动画
     await simulateLoading();
 
-    // 初始化各模块
-    initParticles();
-    initNavbar();
-    initScrollAnimations();
-    initThemeToggle();
-    initArtifactsSwiper();
-    initHeroDynamicContent();
-    initUploadArea();
-    initCharts();
-    initKnowledgeGraphObserver();
-    initRecommendations();
-    initEncyclopediaSystem();
-    initBackToTop();
-    initNumberAnimations();
-    initAuthSystem();
-    initAccessGuards();
+    const safeInit = (fn) => {
+        try {
+            fn();
+        } catch (error) {
+            console.warn(`[init] ${fn.name || 'anonymous'} failed:`, error);
+        }
+    };
+
+    // 先初始化核心交互，保证导航/登录在各页面都可用
+    safeInit(initNavbar);
+    safeInit(initThemeToggle);
+    safeInit(initAuthSystem);
+    safeInit(initAccessGuards);
+
+    // 其余模块按页面能力容错初始化，避免单点报错中断全局
+    safeInit(initParticles);
+    safeInit(initScrollAnimations);
+    safeInit(initArtifactsSwiper);
+    safeInit(initHeroDynamicContent);
+    safeInit(initUploadArea);
+    safeInit(initCharts);
+    safeInit(initKnowledgeGraphObserver);
+    safeInit(initRecommendations);
+    safeInit(initEncyclopediaSystem);
+    safeInit(initBackToTop);
+    safeInit(initNumberAnimations);
 
     // 移除加载屏幕
     hideLoadingScreen();
@@ -64,6 +74,12 @@ async function initializeApp() {
 
 // 模拟加载
 function simulateLoading() {
+    const loadingScreen = document.getElementById('loading-screen');
+    if (!loadingScreen) {
+        // 某些子页面没有加载层，直接初始化，避免导航和登录状态延迟不同步
+        return Promise.resolve();
+    }
+
     let isNavigationLoading = false;
     try {
         isNavigationLoading = sessionStorage.getItem('nav-loading') === '1';
@@ -98,12 +114,22 @@ function initNavbar() {
     const navLinks = document.querySelectorAll('.nav-link');
     if (!navbar) return;
 
-    // 滚动效果
+    const path = (window.location.pathname || '').toLowerCase();
+    const isHomePage = path === '/' || path.endsWith('/index.html') || path.endsWith('index.html');
+
+    // 非首页：导航栏始终不透明白底，避免盖住正文时仍透出背景
+    if (!isHomePage) {
+        navbar.classList.add('scrolled');
+    }
+
+    // 滚动效果（首页：顶部透明，滚动后白底；其他页保持白底）
     window.addEventListener('scroll', utils.throttle(() => {
-        if (window.scrollY > 50) {
-            navbar.classList.add('scrolled');
-        } else {
-            navbar.classList.remove('scrolled');
+        if (isHomePage) {
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
         }
 
         // 更新活动链接

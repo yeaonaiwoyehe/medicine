@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>中医药古文物分布地图</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        body {
+            background: linear-gradient(#dcfce7, #d1fae5);
+        }
+        .page-main {
+            padding-top: 110px;
+            padding-bottom: 7rem;
+        }
+        .container {
+            max-width: 1760px;
+            margin: auto;
+            padding: 1rem;
+        }
+        .main-title {
+            text-align: center;
+            font-size: 2.5rem;
+            color: #064e3b;
+            font-weight: 600;
+            padding: 1.5rem 0 0.5rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+            letter-spacing: 0.3em;
+        }
+        .top-actions {
+            display: flex;
+            justify-content: center;
+            margin: 0.5rem 0 1rem;
+        }
+        .back-link {
+            text-decoration: none;
+            color: #065f46;
+            border: 1px solid #10b981;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 999px;
+            padding: 0.45rem 1rem;
+            transition: 0.2s;
+        }
+        .back-link:hover {
+            background: #10b981;
+            color: #fff;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 2.6fr 0.9fr;
+            gap: 1.5rem;
+        }
+        .map-box {
+            height: 820px;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 1rem;
+            padding: 1rem;
+            position: relative;
+        }
+        .map-svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        .province {
+            cursor: pointer;
+            transition: 0.2s;
+            fill: #F5E6D3;
+            stroke: #8B4513;
+        }
+        .province:hover {
+            fill: #C41E3A !important;
+            stroke: #D4AF37;
+            stroke-width: 2;
+        }
+        .province-label {
+            font-size: 12px;
+            fill: #7c2d12;
+            text-anchor: middle;
+            pointer-events: none;
+            user-select: none;
+            font-weight: 600;
+            paint-order: stroke;
+            stroke: rgba(255, 255, 255, 0.9);
+            stroke-width: 2px;
+        }
+        .nanhai-box {
+            fill: #f5e6d3;
+            stroke: #8B4513;
+            stroke-width: 1.5;
+        }
+        .nanhai-title {
+            font-size: 14px;
+            fill: #7c2d12;
+            text-anchor: middle;
+            font-weight: 700;
+        }
+        .nanhai-dot {
+            fill: #8B4513;
+        }
+        .card {
+            height: 820px;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 1rem;
+            padding: 1rem;
+            overflow: auto;
+        }
+        .title {
+            font-size: 1.5rem;
+            color: #064e3b;
+            font-weight: bold;
+        }
+        .item { margin-top: 0.5rem; }
+        .label { font-weight: bold; color: #047857; }
+        .desc { margin-top: 0.8rem; line-height: 1.5; }
+        #province-image {
+            width: 100%;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        @media (max-width: 992px) {
+            .page-main { padding-top: 90px; }
+            .grid { grid-template-columns: 1fr; }
+            .map-box, .card { height: auto; min-height: 620px; }
+            .main-title { font-size: 1.8rem; letter-spacing: 0.15em; }
+        }
+    </style>
+</head>
+<body>
+    <div id="loading-screen">
+        <div class="loading-content">
+            <div class="loading-logo">
+                <div class="yin-yang">
+                    <div class="yin-yang-inner"></div>
+                </div>
+            </div>
+            <h2 class="loading-title">器药同溯</h2>
+            <p class="loading-subtitle">中医药文物认知系统加载中...</p>
+            <div class="loading-bar">
+                <div class="loading-progress"></div>
+            </div>
+        </div>
+    </div>
+
+    <nav class="navbar scrolled" id="navbar">
+        <div class="navbar-container">
+            <div class="navbar-brand">
+                <div class="brand-icon">
+                    <i class="fas fa-leaf"></i>
+                </div>
+                <div class="brand-text">
+                    <span class="brand-title">器药同溯</span>
+                    <span class="brand-subtitle">中医药文物认知系统</span>
+                </div>
+            </div>
+            <div class="navbar-menu" id="navbar-menu">
+                <a href="index.html" class="nav-link"><i class="fas fa-home"></i><span>首页</span></a>
+                <a href="artifacts.html" class="nav-link"><i class="fas fa-landmark"></i><span>文物库</span></a>
+                <a href="upload.html" class="nav-link"><i class="fas fa-cloud-upload-alt"></i><span>智能识别</span></a>
+                <a href="knowledge.html" class="nav-link"><i class="fas fa-project-diagram"></i><span>知识图谱</span></a>
+                <a href="stats.html" class="nav-link"><i class="fas fa-chart-line"></i><span>数据统计</span></a>
+                <a href="map.html" class="nav-link"><i class="fas fa-map-marked-alt"></i><span>分布地图</span></a>
+                <a href="profile.html" class="nav-link"><i class="fas fa-user-circle"></i><span>个人中心</span></a>
+            </div>
+            <div class="navbar-actions">
+                <button class="auth-button" id="auth-button" aria-label="登录/注册">
+                    <i class="fas fa-user"></i>
+                    <span class="auth-text">登录/注册</span>
+                    <img src="placeholder-user.jpg" alt="用户头像" class="user-avatar" style="display: none;">
+                </button>
+                <button class="theme-toggle" id="theme-toggle" aria-label="切换主题">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <button class="mobile-toggle" id="mobile-toggle" aria-label="菜单">
+                    <span></span><span></span><span></span>
+                </button>
+            </div>
+        </div>
+    </nav>
+    <div class="auth-modal" id="auth-modal">
+        <div class="auth-modal-backdrop" id="auth-modal-backdrop"></div>
+        <div class="auth-modal-content">
+            <div class="auth-modal-header">
+                <h3 class="auth-modal-title">登录/注册</h3>
+                <button class="auth-modal-close" id="auth-modal-close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="auth-modal-body">
+                <form class="auth-form" id="login-form">
+                    <div class="form-group">
+                        <label for="login-email">邮箱</label>
+                        <input type="email" id="login-email" name="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password">密码</label>
+                        <input type="password" id="login-password" name="password" required>
+                    </div>
+                    <button type="submit" class="auth-submit-btn">登录</button>
+                    <div class="auth-switch">
+                        <span>还没有账号？</span>
+                        <button type="button" class="auth-switch-btn" id="switch-to-register">立即注册</button>
+                    </div>
+                </form>
+                <form class="auth-form" id="register-form" style="display: none;">
+                    <div class="form-group">
+                        <label for="register-username">用户名</label>
+                        <input type="text" id="register-username" name="username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="register-email">邮箱</label>
+                        <input type="email" id="register-email" name="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="register-password">密码</label>
+                        <input type="password" id="register-password" name="password" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="register-confirm-password">确认密码</label>
+                        <input type="password" id="register-confirm-password" name="confirmPassword" required>
+                    </div>
+                    <button type="submit" class="auth-submit-btn">注册</button>
+                    <div class="auth-switch">
+                        <span>已有账号？</span>
+                        <button type="button" class="auth-switch-btn" id="switch-to-login">立即登录</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <main class="page-main">
+        <div class="main-title">中医药古文物分布地图</div>
+        <div class="top-actions">
+            <a class="back-link" href="index.html">返回首页</a>
+        </div>
+        <div class="container">
+            <div class="grid">
+                <div class="map-box">
+                    <div id="map"></div>
+                </div>
+                <div id="card" class="card"></div>
+            </div>
+        </div>
+    </main>
+    <footer class="footer">
+        <div class="footer-wave">
+            <svg viewBox="0 0 1440 120" preserveAspectRatio="none">
+                <path d="M0,64L48,69.3C96,75,192,85,288,80C384,75,480,53,576,48C672,43,768,53,864,64C960,75,1056,85,1152,80C1248,75,1344,53,1392,42.7L1440,32L1440,120L1392,120C1344,120,1248,120,1152,120C1056,120,960,120,864,120C768,120,672,120,576,120C480,120,384,120,288,120C192,120,96,120,48,120L0,120Z"></path>
+            </svg>
+        </div>
+        <div class="footer-content">
+            <div class="footer-main">
+                <div class="footer-brand">
+                    <div class="brand-logo"><i class="fas fa-leaf"></i></div>
+                    <h3>器药同溯</h3>
+                    <p>中医药文物认知系统</p>
+                    <p class="brand-slogan">传承千年智慧，科技赋能未来</p>
+                </div>
+                <div class="footer-links">
+                    <div class="link-group">
+                        <h4>快速导航</h4>
+                        <a href="index.html">首页</a>
+                        <a href="artifacts.html">文物库</a>
+                        <a href="upload.html">智能识别</a>
+                        <a href="knowledge.html">知识图谱</a>
+                        <a href="stats.html">数据统计</a>
+                        <a href="map.html">分布地图</a>
+                    </div>
+                    <div class="link-group">
+                        <h4>关于系统</h4>
+                        <a href="#">系统介绍</a>
+                        <a href="#">技术架构</a>
+                        <a href="#">数据来源</a>
+                        <a href="#">更新日志</a>
+                    </div>
+                    <div class="link-group">
+                        <h4>联系我们</h4>
+                        <a href="#">合作咨询</a>
+                        <a href="#">技术支持</a>
+                        <a href="#">意见反馈</a>
+                        <a href="#">加入我们</a>
+                    </div>
+                </div>
+                <div class="footer-contact">
+                    <h4>技术支持</h4>
+                    <div class="contact-item">
+                        <i class="fas fa-envelope"></i>
+                        <span>tcm-ai@example.edu.cn</span>
+                    </div>
+                    <div class="contact-item">
+                        <i class="fas fa-phone"></i>
+                        <span>400-888-9999</span>
+                    </div>
+                    <div class="social-links">
+                        <a href="#" class="social-link"><i class="fab fa-weixin"></i></a>
+                        <a href="#" class="social-link"><i class="fab fa-weibo"></i></a>
+                        <a href="#" class="social-link"><i class="fab fa-github"></i></a>
+                        <a href="#" class="social-link"><i class="fas fa-globe"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 器药同溯 - 中医药文物认知系统 | 基于深度学习与知识图谱技术</p>
+            </div>
+        </div>
+    </footer>
+    <button class="back-to-top" id="back-to-top">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+    <script>
+        const provinceNameMap = {
+            "北京市":"北京","天津市":"天津","河北省":"河北","山西省":"山西","内蒙古自治区":"内蒙古",
+            "辽宁省":"辽宁","吉林省":"吉林","黑龙江省":"黑龙江","上海市":"上海","江苏省":"江苏",
+            "浙江省":"浙江","安徽省":"安徽","福建省":"福建","江西省":"江西","山东省":"山东",
+            "河南省":"河南","湖北省":"湖北","湖南省":"湖南","广东省":"广东","广西壮族自治区":"广西",
+            "海南省":"海南","重庆市":"重庆","四川省":"四川","贵州省":"贵州","云南省":"云南",
+            "西藏自治区":"西藏","陕西省":"陕西","甘肃省":"甘肃","青海省":"青海","宁夏回族自治区":"宁夏",
+            "新疆维吾尔自治区":"新疆"
+        };
+        const provinceOrder = [
+            "北京","天津","河北","山西","内蒙古","辽宁","吉林","黑龙江",
+            "上海","江苏","浙江","安徽","福建","江西","山东","河南",
+            "湖北","湖南","广东","广西","海南","重庆","四川","贵州",
+            "云南","西藏","陕西","甘肃","青海","宁夏","新疆"
+        ];
+        const provinceInfo = {
+            "北京":{count:20,medicine:"黄芪、党参、枸杞",time:"西汉（公元前206年）",desc:"北京地区出土的中医药文物以宫廷御药为主，包含大量珍贵的药方典籍。"},
+            "天津":{count:2,medicine:"金银花、连翘、板蓝根",time:"明代（1368年）",desc:"天津作为近代药材集散地，保存了大量明清时期的中药铺老字号文物。"},
+            "河北":{count:8,medicine:"酸枣仁、知母、柴胡",time:"战国时期（公元前475年）",desc:"河北是扁鹊故里，出土了大量战国时期的医疗器具和药方竹简。"},
+            "山西":{count:8,medicine:"黄芪、党参、远志",time:"春秋时期（公元前770年）",desc:"山西黄芪驰名中外，出土了大量古代炮制工具和药材储存器皿。"},
+            "内蒙古":{count:1,medicine:"甘草、麻黄、防风",time:"辽代（916年）",desc:"内蒙古蒙医药文化源远流长，出土了大量蒙古族传统医药文物。"},
+            "辽宁":{count:5,medicine:"人参、鹿茸、五味子",time:"汉代（公元前202年）",desc:"辽宁是东北三宝的重要产地，出土了大量与人参相关的古代文物。"},
+            "吉林":{count:2,medicine:"人参、鹿茸、蛤蟆油",time:"金代（1115年）",desc:"吉林长白山是人参的主要产地，保存了大量采参工具和药材加工文物。"},
+            "黑龙江":{count:2,medicine:"刺五加、北五味子、满山红",time:"清代（1644年）",desc:"黑龙江地区出土了大量满族传统医药文物和北方特色药材标本。"},
+            "上海":{count:2,medicine:"西洋参、川贝、燕窝",time:"清代（1843年）",desc:"上海是近代中西医结合的重要城市，保存了大量近代中药铺文物。"},
+            "江苏":{count:12,medicine:"薄荷、茅苍术、明党参",time:"春秋时期（公元前770年）",desc:"江苏是中医药文化重镇，出土了大量古代医学典籍和药材加工工具。"},
+            "浙江":{count:30,medicine:"浙贝母、白术、杭白菊",time:"良渚文化（约前3300年）",desc:"浙江杭州是中医药重要发祥地，出土了大量良渚文化时期的药用器具。"},
+            "安徽":{count:8,medicine:"霍山石斛、亳白芍、滁菊",time:"战国时期（公元前475年）",desc:"安徽亳州是华佗故里，也是中国最大的中药材集散地，文物丰富。"},
+            "福建":{count:6,medicine:"建泽泻、建莲子、金线莲",time:"唐代（618年）",desc:"福建是海上丝绸之路起点，出土了大量进口药材和贸易相关文物。"},
+            "江西":{count:7,medicine:"枳壳、车前子、吴茱萸",time:"商代（约前1600年）",desc:"江西樟树是中国药都，出土了大量古代药材加工和交易相关文物。"},
+            "山东":{count:10,medicine:"阿胶、金银花、北沙参",time:"西周（约前1046年）",desc:"山东是阿胶的发源地，出土了大量与阿胶制作相关的古代文物。"},
+            "河南":{count:22,medicine:"怀地黄、怀山药、怀牛膝",time:"殷商（约前1600年）",desc:"河南是张仲景故里，四大怀药产地，出土了大量珍贵的医学典籍。"},
+            "湖北":{count:10,medicine:"茯苓、黄连、天麻",time:"战国时期（公元前475年）",desc:"湖北是李时珍故里，出土了大量与《本草纲目》相关的珍贵文物。"},
+            "湖南":{count:25,medicine:"湘莲、玉竹、百合",time:"马王堆汉墓（前168年）",desc:"湖南马王堆汉墓出土了大量珍贵的中医药文物，包括帛书医方。"},
+            "广东":{count:289,medicine:"广陈皮、广藿香、化橘红",time:"南越国（前203年）",desc:"广东是岭南医学发源地，出土了大量南越国时期的药用器具。"},
+            "广西":{count:4,medicine:"罗汉果、八角、桂皮",time:"唐代（618年）",desc:"广西壮医药文化独特，出土了大量壮族传统医药文物和药材标本。"},
+            "海南":{count:1,medicine:"沉香、槟榔、益智仁",time:"宋代（960年）",desc:"海南沉香闻名天下，出土了大量与香药贸易相关的古代文物。"},
+            "重庆":{count:6,medicine:"黄连、厚朴、杜仲",time:"巴国时期（约前1000年）",desc:"重庆是巴文化发源地，出土了大量巴蜀地区的古代医药文物。"},
+            "四川":{count:12,medicine:"川芎、川贝母、附子",time:"三星堆（约前1200年）",desc:"四川是道地药材重要产区，出土了大量与川药相关的珍贵文物。"},
+            "贵州":{count:3,medicine:"天麻、杜仲、何首乌",time:"明代（1368年）",desc:"贵州苗医药文化独特，出土了大量苗族传统医药文物。"},
+            "云南":{count:4,medicine:"三七、天麻、石斛",time:"滇国时期（前278年）",desc:"云南是植物王国，民族医药丰富，出土了大量各民族医药文物。"},
+            "西藏":{count:145,medicine:"藏红花、雪莲、冬虫夏草",time:"吐蕃时期（629年）",desc:"西藏藏医药文化博大精深，出土了大量藏医药典籍和医疗器具。"},
+            "陕西":{count:18,medicine:"秦皮、秦艽、党参",time:"周代（约前1046年）",desc:"陕西是中华文明发祥地，出土了大量周秦汉唐时期的医药文物。"},
+            "甘肃":{count:1,medicine:"当归、黄芪、大黄",time:"敦煌汉简（前111年）",desc:"甘肃是当归主产区，敦煌出土了大量珍贵的医学文献和药方。"},
+            "青海":{count:1,medicine:"冬虫夏草、大黄、贝母",time:"唐代（618年）",desc:"青海是冬虫夏草的重要产地，出土了大量藏医药相关文物。"},
+            "宁夏":{count:1,medicine:"枸杞、甘草、银柴胡",time:"西夏（1038年）",desc:"宁夏枸杞闻名中外，出土了大量西夏时期的医药文物。"},
+            "新疆":{count:1,medicine:"红花、甘草、雪莲",time:"汉代（前202年）",desc:"新疆是丝绸之路要道，出土了大量西域药材贸易相关文物。"},
+            "台湾":{count:1,medicine:"樟脑、牛樟芝、金线莲",time:"清代（1683年）",desc:"台湾保存了大量闽南传统医药文化遗产和药材标本。"},
+            "香港":{count:1,medicine:"陈皮、燕窝、海马",time:"清代（1841年）",desc:"香港是中药材贸易重镇，保存了大量近代中药行业文物。"},
+            "澳门":{count:1,medicine:"陈皮、燕窝、龙骨",time:"明代（1553年）",desc:"澳门是中西医药交流的重要窗口，保存了大量葡萄牙时期的医药文物。"}
+        };
+        let selected = "全国";
+        let geo;
+        function getImg(name) {
+            const index = provinceOrder.indexOf(name);
+            if (index === -1) return "";
+            const num = String(index + 1).padStart(3, "0");
+            return `images1/fenbu_${num}.jpg`;
+        }
+        function getImgCandidates(name) {
+            const rel = getImg(name);
+            if (!rel) return [];
+            const fileName = rel.split("/").pop();
+            return [
+                rel,
+                `../images1/${fileName}`,
+                `../../images1/${fileName}`,
+                `/images1/${fileName}`
+            ];
+        }
+        function tryLoadImg(el, candidates, index = 0) {
+            if (!el || !candidates.length || index >= candidates.length) {
+                if (el) el.style.display = "none";
+                return;
+            }
+            el.src = candidates[index];
+            el.onerror = () => tryLoadImg(el, candidates, index + 1);
+        }
+        function proj(lon, lat) {
+            return [(lon - 105) * 10 + 500, (35 - lat) * 10 + 400];
+        }
+        function path(coords) {
+            let d = "";
+            coords.forEach((p, i) => {
+                const [x, y] = proj(p[0], p[1]);
+                d += (i ? "L" : "M") + x + "," + y;
+            });
+            return d + "Z";
+        }
+        function getMainRing(geometry) {
+            if (!geometry) return null;
+            if (geometry.type === "Polygon") {
+                return geometry.coordinates?.[0] || null;
+            }
+            if (geometry.type === "MultiPolygon") {
+                let bestRing = null;
+                let bestLength = 0;
+                (geometry.coordinates || []).forEach((poly) => {
+                    const ring = poly?.[0];
+                    if (ring && ring.length > bestLength) {
+                        bestLength = ring.length;
+                        bestRing = ring;
+                    }
+                });
+                return bestRing;
+            }
+            return null;
+        }
+        function centroidOfRing(ring) {
+            if (!ring || !ring.length) return [500, 400];
+            let minLon = Infinity;
+            let maxLon = -Infinity;
+            let minLat = Infinity;
+            let maxLat = -Infinity;
+            ring.forEach((pt) => {
+                minLon = Math.min(minLon, pt[0]);
+                maxLon = Math.max(maxLon, pt[0]);
+                minLat = Math.min(minLat, pt[1]);
+                maxLat = Math.max(maxLat, pt[1]);
+            });
+            return proj((minLon + maxLon) / 2, (minLat + maxLat) / 2);
+        }
+        function boxIntersects(a, b) {
+            return !(a.x2 < b.x1 || a.x1 > b.x2 || a.y2 < b.y1 || a.y1 > b.y2);
+        }
+        function calcLabelFontSize(ring) {
+            if (!ring || ring.length < 2) return 11;
+            let minLon = Infinity;
+            let maxLon = -Infinity;
+            let minLat = Infinity;
+            let maxLat = -Infinity;
+            ring.forEach((pt) => {
+                minLon = Math.min(minLon, pt[0]);
+                maxLon = Math.max(maxLon, pt[0]);
+                minLat = Math.min(minLat, pt[1]);
+                maxLat = Math.max(maxLat, pt[1]);
+            });
+            const width = Math.abs(maxLon - minLon);
+            const height = Math.abs(maxLat - minLat);
+            const metric = width * height;
+            if (metric < 0.8) return 9;
+            if (metric < 1.8) return 10;
+            if (metric < 3.2) return 11;
+            return 12;
+        }
+        function buildProvinceLabels(placedBoxes, mapped, baseX, baseY, fontSize) {
+            const textWidth = mapped.length * fontSize;
+            const textHeight = fontSize;
+            const offsets = [
+                [0, 0], [0, -14], [0, 14], [14, 0], [-14, 0],
+                [10, -12], [-10, -12], [10, 12], [-10, 12],
+                [0, -24], [0, 24]
+            ];
+            for (const [dx, dy] of offsets) {
+                const x = baseX + dx;
+                const y = baseY + dy;
+                const box = {
+                    x1: x - textWidth / 2 - 2,
+                    y1: y - textHeight + 2,
+                    x2: x + textWidth / 2 + 2,
+                    y2: y + 4
+                };
+                const collision = placedBoxes.some((b) => boxIntersects(box, b));
+                if (!collision) {
+                    placedBoxes.push(box);
+                    return `<text x="${x}" y="${y}" class="province-label" style="font-size:${fontSize}px">${mapped}</text>`;
+                }
+            }
+            return "";
+        }
+        function drawSouthChinaSeaInset() {
+            const x = 760;
+            const y = 510;
+            const w = 150;
+            const h = 170;
+            const dots = [
+                [52, 78], [86, 90], [60, 104],
+                [94, 116], [70, 130]
+            ];
+            let inset = `
+<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="6" ry="6" class="nanhai-box"/>
+<text x="${x + w / 2}" y="${y + 30}" class="nanhai-title">南海诸岛</text>
+`;
+            dots.forEach((pt) => {
+                inset += `<circle cx="${x + pt[0]}" cy="${y + pt[1]}" r="4" class="nanhai-dot"/>`;
+            });
+            return inset;
+        }
+        function draw() {
+            let svg = '<svg viewBox="0 0 1000 800" class="map-svg">';
+            const placedBoxes = [];
+            let labelsSvg = "";
+            geo.features.forEach((f) => {
+                const name = f.properties.name;
+                const mapped = provinceNameMap[name] || name;
+                const ring = getMainRing(f.geometry);
+                if (!ring) return;
+                const d = path(ring);
+                const fillColor = (mapped === selected) ? "#8B0000" : "#F5E6D3";
+                const [cx, cy] = centroidOfRing(ring);
+                const fontSize = calcLabelFontSize(ring);
+                svg += `
+<path d="${d}"
+fill="${fillColor}"
+stroke="#8B4513"
+class="province"
+onclick="selectProvince('${mapped}')"/>
+`;
+                labelsSvg += buildProvinceLabels(placedBoxes, mapped, cx, cy, fontSize);
+            });
+            svg += labelsSvg;
+            svg += drawSouthChinaSeaInset();
+            svg += "</svg>";
+            document.getElementById("map").innerHTML = svg;
+        }
+        function renderCard() {
+            const el = document.getElementById("card");
+            const data = provinceInfo[selected];
+            const candidates = getImgCandidates(selected);
+            el.innerHTML = `
+<div class="title">${selected}</div>
+<img id="province-image" src="" alt="${selected}文物示意图"/>
+<div class="item"><span class="label">文物数量：</span>${data?.count || 0}</div>
+<div class="item"><span class="label">代表药材：</span>${data?.medicine || "暂无"}</div>
+<div class="item"><span class="label">最早年代：</span>${data?.time || "暂无"}</div>
+<div class="desc">${data?.desc || "暂无描述"}</div>
+`;
+            const img = document.getElementById("province-image");
+            tryLoadImg(img, candidates);
+        }
+        function selectProvince(p) {
+            selected = p;
+            draw();
+            renderCard();
+        }
+        fetch("https://cdn.jsdelivr.net/gh/lyhmyd1211/GeoMapData_CN@master/china.json")
+            .then((r) => r.json())
+            .then((d) => {
+                geo = d;
+                draw();
+                renderCard();
+            });
+    </script>
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
+    <script src="js/data.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/charts.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
